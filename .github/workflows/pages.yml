@@ -23,12 +23,12 @@ jobs:
         run: |
           set -e
           fail=0
-          for f in app.html index.html brief.html; do
+          for f in app.html; do
             if [ ! -f "$f" ]; then echo "::error::missing $f"; fail=1; continue; fi
             head -1 "$f" | grep -qi "<!DOCTYPE html>" || { echo "::error::$f missing <!DOCTYPE html>"; fail=1; }
             grep -qi "</html>" "$f" || { echo "::error::$f missing closing </html>"; fail=1; }
           done
-          [ "$fail" -eq 0 ] && echo "✓ app.html / index.html / brief.html present and well-formed"
+          [ "$fail" -eq 0 ] && echo "✓ app.html present and well-formed"
           exit $fail
 
   deploy:

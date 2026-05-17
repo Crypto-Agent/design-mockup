@@ -71,7 +71,9 @@
   .railbot{flex:none;border-top:1px solid var(--bds);padding-top:8px;margin-top:6px;
     display:flex;flex-direction:column;gap:2px}
   .brand{display:flex;align-items:center;gap:9px;padding:6px 8px 14px;font-weight:590;
-    color:var(--fg);font-size:15px;letter-spacing:-.02em}
+    color:var(--fg);font-size:15px;letter-spacing:-.02em;cursor:pointer;border-radius:8px;
+    transition:opacity .12s ease}
+  .brand:hover{opacity:.72}
   .gl{width:22px;height:22px;border-radius:7px;display:grid;place-items:center;
     font-size:12px;font-weight:700;color:#fff;
     background:linear-gradient(150deg,var(--ac2),var(--ac) 60%,#3b3f9e);
@@ -452,7 +454,7 @@
 
 <div class="app">
   <div class="rail">
-    <div class="brand"><span class="gl">C</span> Crypto-Agent</div>
+    <div class="brand" id="brandHome" role="button" tabindex="0" title="대시보드로 이동"><span class="gl">C</span> Crypto-Agent</div>
     <button class="newchat">＋ 새 대화</button>
 
     <div class="agtog" id="agtog">
@@ -1166,6 +1168,10 @@ correct args.</div>
   }));
   (function(){var a=document.getElementById('agtog');
     if(a)a.querySelector('.agth').addEventListener('click',()=>a.classList.toggle('collapsed'));})();
+  (function(){var b=document.getElementById('brandHome');if(!b)return;
+    function home(){document.querySelectorAll('.cv-i').forEach(x=>x.classList.remove('on'));go('dash');}
+    b.addEventListener('click',home);
+    b.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();home();}});})();
 
   // per-agent canvas switching (scoped)
   function cvShow(cvEl,id){
