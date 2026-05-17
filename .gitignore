@@ -1,0 +1,6 @@
+# QA 스크린샷 (내부 검증용 — 푸시 제외)
+*.png
+
+# OS/에디터
+.DS_Store
+Thumbs.db

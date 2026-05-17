@@ -1,0 +1,1213 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Crypto-Agent — 전체 화면 풀 시안 (통합 프로토타입)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300..700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  /* open-design / linear-app — dark-native · Inter cv01/ss03 · indigo accent
+     · semi-transparent borders · luminance-step elevation. mode: prototype */
+  :root{
+    --bg:#08090a;--panel:#0f1011;--surf:#191a1b;--surf2:#1f2022;
+    --fg:#f7f8f8;--fg2:#d0d6e0;--mut:#8a8f98;--meta:#62666d;
+    --bd:rgba(255,255,255,.08);--bds:rgba(255,255,255,.05);
+    --ac:#5e6ad2;--ac2:#7170ff;--ach:#828fff;
+    --ok:#27a644;--em:#10b981;--warn:#eab308;--dng:#dc2626;
+    --f:"Inter","SF Pro Display",-apple-system,system-ui,"Segoe UI",Roboto,sans-serif;
+    --m:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,monospace;
+    --rs:6px;--rm:8px;--rl:12px;--pill:9999px}
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{background:var(--bg);color:var(--fg2);font-family:var(--f);font-size:14px;
+    line-height:1.55;font-feature-settings:"cv01","ss03";-webkit-font-smoothing:antialiased;
+    overflow:hidden}
+  body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:999;
+    opacity:.02;mix-blend-mode:overlay;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3'/%3E%3C/filter%3E%3Crect width='150' height='150' filter='url(%23n)'/%3E%3C/svg%3E")}
+  ::selection{background:rgba(113,112,255,.32);color:#fff}
+  .m{font-family:var(--m);font-feature-settings:normal}
+  a{color:var(--ac2);text-decoration:none}
+  @keyframes ri{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  @keyframes cf{from{opacity:0}to{opacity:1}}
+
+  .ann{height:32px;display:flex;align-items:center;gap:9px;padding:0 18px;font-size:11.5px;
+    font-weight:510;color:var(--fg2);
+    background:linear-gradient(90deg,rgba(94,106,210,.16),rgba(94,106,210,.02));
+    border-bottom:1px solid var(--bds)}
+  .ann b{color:var(--ac2);font-weight:590}
+
+  .app{display:grid;grid-template-columns:240px 1fr;height:calc(100% - 32px)}
+
+  /* left rail */
+  .rail{background:var(--panel);border-right:1px solid var(--bds);
+    display:flex;flex-direction:column;padding:14px 11px;gap:3px;overflow:hidden}
+  .newchat{margin:6px 2px 10px;display:flex;align-items:center;gap:8px;
+    font-family:var(--f);font-size:12.5px;font-weight:590;color:var(--fg);cursor:pointer;
+    background:rgba(255,255,255,.04);border:1px solid var(--bd);border-radius:var(--rm);padding:9px 11px}
+  .newchat:hover{background:rgba(94,106,210,.16);border-color:rgba(113,112,255,.4)}
+  .agth{width:100%;display:flex;align-items:center;gap:8px;background:none;border:0;cursor:pointer;
+    font-family:var(--f);font-size:11px;font-weight:590;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--meta);padding:7px 8px}
+  .agcr{font-size:9px;transition:transform .18s;color:var(--meta)}
+  .agtog.collapsed .agcr{transform:rotate(-90deg)}
+  .agm{margin-left:auto;font-size:9.5px;font-weight:510;letter-spacing:0;text-transform:none;color:var(--meta)}
+  .agsub{display:flex;flex-direction:column;gap:2px;margin-left:14px;
+    border-left:1px solid var(--bds);padding-left:2px}
+  .agtog.collapsed .agsub{display:none}
+  .convo{flex:1;overflow:auto;margin-top:6px;display:flex;flex-direction:column;gap:1px;min-height:0}
+  .cv-i{display:flex;align-items:center;gap:9px;padding:8px 9px;border-radius:var(--rm);
+    cursor:pointer;border:1px solid transparent}
+  .cv-i:hover{background:rgba(255,255,255,.03)}
+  .cv-i.on{background:rgba(94,106,210,.12);border-color:rgba(113,112,255,.28)}
+  .cv-i .ic{width:20px;height:20px;border-radius:6px;display:grid;place-items:center;font-size:10px;
+    flex:none;background:rgba(255,255,255,.04);border:1px solid var(--bds)}
+  .cv-i .ct{font-size:12.5px;color:var(--fg2);font-weight:510;white-space:nowrap;overflow:hidden;
+    text-overflow:ellipsis;max-width:152px}
+  .cv-i.on .ct{color:var(--fg)}
+  .cv-i .cs{font-size:10px;color:var(--meta);margin-top:2px}
+  .railbot{flex:none;border-top:1px solid var(--bds);padding-top:8px;margin-top:6px;
+    display:flex;flex-direction:column;gap:2px}
+  .brand{display:flex;align-items:center;gap:9px;padding:6px 8px 14px;font-weight:590;
+    color:var(--fg);font-size:15px;letter-spacing:-.02em}
+  .gl{width:22px;height:22px;border-radius:7px;display:grid;place-items:center;
+    font-size:12px;font-weight:700;color:#fff;
+    background:linear-gradient(150deg,var(--ac2),var(--ac) 60%,#3b3f9e);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.25),0 0 0 1px rgba(255,255,255,.06)}
+  .rl{font-size:10.5px;font-weight:590;letter-spacing:.13em;text-transform:uppercase;
+    color:var(--meta);padding:13px 8px 6px}
+  .nav{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:var(--rm);
+    font-size:13px;font-weight:510;color:var(--fg2);cursor:pointer;border:1px solid transparent}
+  .nav:hover{background:rgba(255,255,255,.03)}
+  .nav .ic{width:21px;height:21px;border-radius:6px;display:grid;place-items:center;
+    font-size:11px;background:rgba(255,255,255,.04);border:1px solid var(--bds)}
+  .nav .tg{margin-left:auto;font-size:10px;color:var(--meta);font-family:var(--m)}
+  .nav.on{background:rgba(94,106,210,.13);border-color:rgba(113,112,255,.32);color:var(--fg)}
+  .nav.on .ic{background:rgba(94,106,210,.25);border-color:rgba(113,112,255,.4)}
+  .nav.dis{opacity:.42;cursor:not-allowed}
+  .nav.child{margin-left:12px;font-size:12.5px}
+  .branch{margin-left:20px;border-left:1px solid var(--bds)}
+  .live{width:6px;height:6px;border-radius:50%;background:var(--em);
+    box-shadow:0 0 6px var(--em);margin-left:auto}
+  .rfoot{margin-top:auto;padding:11px 8px 3px;font-size:10.5px;color:var(--meta);
+    border-top:1px solid var(--bds)}
+
+  /* main */
+  .main{display:flex;flex-direction:column;min-width:0;background:var(--bg)}
+  .hd{height:52px;flex:none;display:flex;align-items:center;gap:11px;padding:0 24px;
+    border-bottom:1px solid var(--bds)}
+  .hd .ti{font-size:14px;font-weight:590;color:var(--fg);letter-spacing:-.015em}
+  .hd .mt{font-size:12px;color:var(--meta)}
+  .hd .chip{margin-left:auto;font-size:11px;font-weight:510;color:var(--fg2);
+    padding:4px 10px 4px 8px;border-radius:var(--pill);border:1px solid var(--bd);
+    background:rgba(255,255,255,.02);display:inline-flex;align-items:center;gap:6px}
+  .hd .chip .d{width:6px;height:6px;border-radius:50%;background:var(--ac2);box-shadow:0 0 6px var(--ac2)}
+
+  .stage{flex:1;min-height:0}
+  .scr{display:none;height:100%}
+  .scr.on{display:block;animation:cf .35s ease}
+  .scr.split.on{display:grid;grid-template-columns:1fr 430px;height:100%}
+  @media(max-width:1120px){.scr.split.on{grid-template-columns:1fr 380px}}
+
+  /* doc-style screens (dash/sess/set) scroll whole */
+  .doc{overflow:auto;padding:26px 24px;height:100%}
+  .kick{font-size:11px;font-weight:590;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--ac2);margin-bottom:12px}
+  h1{color:var(--fg);font-weight:510;font-size:30px;line-height:1.1;letter-spacing:-.025em}
+  h1 .s{color:var(--meta)}
+  .lede{margin-top:12px;font-size:15px;color:var(--mut);max-width:64ch}
+  .lbl{font-size:10.5px;font-weight:590;letter-spacing:.13em;text-transform:uppercase;
+    color:var(--meta);margin-bottom:12px}
+  .card{background:rgba(255,255,255,.02);border:1px solid var(--bd);border-radius:var(--rl);padding:18px}
+  .card+.card{margin-top:14px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+  .grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+  @media(max-width:900px){.grid3,.grid4{grid-template-columns:1fr 1fr}.grid2{grid-template-columns:1fr}}
+  .pick{background:#0c0d0e;border:1px solid var(--bds);border-radius:var(--rm);padding:15px;
+    cursor:pointer;transition:.15s}
+  .pick:hover{border-color:rgba(113,112,255,.34);background:rgba(94,106,210,.07)}
+  .pick .h{font-size:14px;font-weight:590;color:var(--fg);display:flex;align-items:center;gap:8px}
+  .pick .d{font-size:12px;color:var(--mut);margin-top:6px;line-height:1.55}
+  .pick .ph{margin-top:10px;font-size:10px;font-family:var(--m);color:var(--ac2);
+    border:1px solid rgba(113,112,255,.3);border-radius:4px;padding:1px 6px;display:inline-block}
+  .kpi{display:flex;flex-direction:column;gap:10px}
+  .kr{display:flex;align-items:baseline;justify-content:space-between;font-size:12.5px;
+    padding-bottom:9px;border-bottom:1px solid var(--bds)}
+  .kr:last-child{border:0;padding:0}
+  .kr .v{font-family:var(--m);color:var(--fg);font-weight:600}.kr .v.g{color:var(--em)}
+  .dday{font-family:var(--m);font-size:20px;font-weight:600;color:var(--ac2)}
+  .row{display:flex;gap:9px;padding:10px 0;border-bottom:1px solid var(--bds);font-size:12.5px;
+    align-items:center}
+  .row:last-child{border:0}
+  .ci{flex:none;width:22px;height:22px;border-radius:6px;display:grid;place-items:center;
+    background:rgba(255,255,255,.04);border:1px solid var(--bds);font-size:10px}
+  .row .n{color:var(--fg);font-weight:590}.row .mt{color:var(--meta);font-size:11px;margin-top:2px}
+  .tag{font-size:9.5px;font-weight:590;color:var(--fg2);background:rgba(255,255,255,.05);
+    border:1px solid var(--bds);padding:2px 7px;border-radius:4px;cursor:pointer}
+  .tag.ok{color:var(--ok);border-color:rgba(39,166,68,.3)}
+
+  /* chat column */
+  .chatcol{display:flex;flex-direction:column;min-width:0;height:100%;
+    border-right:1px solid var(--bds)}
+  .ch-top{flex:none;padding:18px 24px 0}
+  .thread{flex:1;overflow:auto;padding:18px 24px;display:flex;flex-direction:column;gap:15px}
+  .turn{display:flex;gap:11px;max-width:560px}
+  .turn.u{align-self:flex-end;flex-direction:row-reverse}
+  .av{flex:none;width:26px;height:26px;border-radius:7px;display:grid;place-items:center;
+    font-size:11px;font-weight:700;border:1px solid var(--bds)}
+  .av.u{background:var(--surf2);color:var(--fg2)}
+  .av.a{background:linear-gradient(150deg,var(--ac2),var(--ac));color:#fff}
+  .bub{font-size:13.5px;line-height:1.62}
+  .turn.u .bub{background:var(--surf2);border:1px solid var(--bd);color:var(--fg);
+    padding:10px 13px;border-radius:11px 11px 3px 11px}
+  .who{font-size:10.5px;font-weight:590;color:var(--meta);margin-bottom:5px}
+  .bub b{color:var(--fg);font-weight:590}
+  .bub .tok{font-family:var(--m);font-size:.85em;color:var(--fg);
+    background:rgba(255,255,255,.05);padding:1px 6px;border-radius:5px}
+  .spawn{align-self:center;width:100%;max-width:500px;display:flex;align-items:center;gap:10px;
+    padding:9px 13px;border:1px dashed rgba(113,112,255,.34);border-radius:var(--rm);
+    background:rgba(94,106,210,.06);font-size:12px;color:var(--fg2)}
+  .spawn b{color:var(--ac2);font-weight:590}.spawn .st{margin-left:auto;font-size:10.5px;color:var(--em)}
+  .seebtn{margin-top:10px;display:inline-flex;align-items:center;gap:8px;font-size:12px;
+    font-weight:510;color:var(--fg2);cursor:pointer;border:1px solid var(--bd);
+    background:rgba(255,255,255,.025);padding:7px 12px;border-radius:var(--rs);transition:.15s}
+  .seebtn:hover{background:rgba(94,106,210,.14);border-color:rgba(113,112,255,.4);color:var(--fg)}
+  .seebtn .k{font-size:9.5px;font-family:var(--m);color:var(--ac2);
+    border:1px solid rgba(113,112,255,.3);border-radius:4px;padding:1px 5px}
+  .composer{flex:none;padding:13px 24px 18px;border-top:1px solid var(--bds)}
+  .cbox{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.025);
+    border:1px solid var(--bd);border-radius:var(--rl);padding:11px 12px}
+  .cbox:focus-within{border-color:rgba(113,112,255,.5);box-shadow:0 0 0 3px rgba(94,106,210,.16)}
+  .cbox input{flex:1;background:none;border:0;outline:0;color:var(--fg);font-family:var(--f);font-size:13.5px}
+  .cbox input::placeholder{color:var(--meta)}
+  .snd{background:var(--ac);color:#fff;border:0;cursor:pointer;font-weight:590;font-size:12.5px;
+    padding:8px 14px;border-radius:var(--rs)}.snd:hover{background:var(--ach)}
+  .hints{display:flex;gap:7px;margin-top:9px;flex-wrap:wrap}
+  .hint{font-size:11px;font-weight:510;color:var(--fg2);cursor:pointer;
+    border:1px solid rgba(255,255,255,.09);padding:4px 10px;border-radius:var(--pill)}
+  .hint:hover{background:rgba(255,255,255,.04);color:var(--fg)}
+
+  /* canvas */
+  .cv{display:flex;flex-direction:column;min-width:0;height:100%;background:var(--panel)}
+  .cvh{flex:none;padding:14px 18px 0}
+  .cvh .top{display:flex;align-items:center;gap:9px;margin-bottom:12px}
+  .cvh .nm{font-size:13px;font-weight:590;color:var(--fg)}
+  .cvtag{font-size:10px;font-weight:510;color:var(--ac2);border:1px solid rgba(113,112,255,.3);
+    background:rgba(94,106,210,.1);padding:2px 7px;border-radius:var(--pill)}
+  .prog{margin-left:auto;font-size:11px;color:var(--meta)}.prog b{color:var(--ac2);font-weight:600}
+  .cvtabs{display:flex;gap:2px;overflow:auto;border-bottom:1px solid var(--bds)}
+  .cvtab{flex:none;font-size:11.5px;font-weight:510;color:var(--mut);cursor:pointer;
+    padding:9px 11px;border-bottom:2px solid transparent;white-space:nowrap;
+    display:flex;align-items:center;gap:6px;transition:.15s}
+  .cvtab .n{font-family:var(--m);font-size:9.5px;width:14px;height:14px;border-radius:4px;
+    display:grid;place-items:center;background:rgba(255,255,255,.05);color:var(--meta)}
+  .cvtab:hover{color:var(--fg2)}
+  .cvtab.on{color:var(--fg);border-bottom-color:var(--ac2)}
+  .cvtab.on .n{background:rgba(94,106,210,.25);color:var(--ac2)}
+  .cvbody{flex:1;overflow:auto;padding:18px}
+  .cvs{display:none;animation:ri .4s cubic-bezier(.23,1,.32,1)}
+  .cvs.on{display:block}
+  .cvfoot{flex:none;padding:10px 18px;border-top:1px solid var(--bds);font-size:10.5px;
+    color:var(--meta);display:flex;gap:8px;align-items:center}
+  .cvfoot .sp{color:#303236}
+
+  .vb{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:590;
+    color:var(--em);border:1px solid rgba(16,185,129,.3);background:rgba(16,185,129,.08);
+    padding:4px 9px;border-radius:var(--pill);margin-bottom:11px}
+  .vb::before{content:"";width:5px;height:5px;border-radius:50%;background:var(--em)}
+  .vb.w{color:var(--warn);border-color:rgba(234,179,8,.3);background:rgba(234,179,8,.08)}
+  .vb.w::before{background:var(--warn)}
+  .vb.d{color:var(--dng);border-color:rgba(220,38,38,.32);background:rgba(220,38,38,.09)}
+  .vb.d::before{background:var(--dng)}
+  .sum{font-size:16px;line-height:1.45;font-weight:510;color:var(--fg);letter-spacing:-.01em}
+  .sum em{font-style:normal;color:var(--ac2)}
+  .sum .tok{font-family:var(--m);font-weight:600;font-size:.8em;background:rgba(255,255,255,.05);
+    padding:1px 6px;border-radius:5px}
+  .subr{margin-top:9px;font-size:12.5px;color:var(--mut);line-height:1.6}.subr b{color:var(--fg2)}
+  .facts{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--bds);
+    border:1px solid var(--bds);border-radius:var(--rm);overflow:hidden;margin-top:12px}
+  .facts>div{background:#0c0d0e;padding:10px 12px}
+  .facts dt{font-size:9.5px;font-weight:510;letter-spacing:.05em;color:var(--meta);
+    text-transform:uppercase;margin-bottom:4px}
+  .facts dd{font-size:12.5px;color:var(--fg);font-weight:510}
+  .flow{display:flex;flex-direction:column;gap:8px}
+  .fn{background:#0c0d0e;border:1px solid var(--bds);border-radius:var(--rm);padding:11px 13px}
+  .fn.hl{border-color:rgba(113,112,255,.32)}
+  .fn .w{font-size:12.5px;font-weight:590;color:var(--fg);display:flex;gap:7px;align-items:center}
+  .fn .a{font-family:var(--m);font-size:11px;color:var(--mut);margin-top:4px}
+  .fn .r{font-size:11px;color:var(--meta);margin-top:6px}
+  .fbar{display:flex;align-items:center;gap:9px;padding:2px 3px;color:var(--ac2);
+    font-family:var(--m);font-size:11px;font-weight:600}
+  .fbar .ln{flex:1;height:1px;background:linear-gradient(90deg,transparent,var(--ac2),transparent)}
+  .step{border:1px solid var(--bds);border-radius:var(--rm);background:#0c0d0e;overflow:hidden}
+  .step+.step{margin-top:8px}
+  .step button{width:100%;display:flex;align-items:center;gap:11px;cursor:pointer;
+    background:none;border:0;color:inherit;text-align:left;padding:12px 14px;font-family:var(--f)}
+  .step .nm{flex:none;width:20px;height:20px;border-radius:6px;font-size:10px;font-weight:600;
+    display:grid;place-items:center;color:var(--ac2);background:rgba(94,106,210,.14);
+    border:1px solid rgba(113,112,255,.28);font-family:var(--m)}
+  .step .t{flex:1;font-size:13px;font-weight:590;color:var(--fg)}
+  .cr{color:var(--meta);transition:transform .22s}.step.open .cr{transform:rotate(90deg)}
+  .sb{display:grid;grid-template-rows:0fr;transition:grid-template-rows .25s cubic-bezier(.23,1,.32,1)}
+  .step.open .sb{grid-template-rows:1fr}.sb>div{overflow:hidden}
+  .sb p{padding:0 14px 12px 45px;font-size:12.5px;line-height:1.65;color:var(--fg2)}
+  .sb p .m{color:var(--fg)}
+  .ask{margin:0 14px 13px 45px;padding:10px 12px;border-left:2px solid var(--ac);
+    background:rgba(94,106,210,.07);border-radius:0 var(--rs) var(--rs) 0;font-size:12px;
+    line-height:1.55;color:var(--fg2)}.ask b{color:var(--ac2)}
+  .src li{list-style:none;display:flex;gap:10px;padding:10px 0;border-bottom:1px solid var(--bds);font-size:12.5px}
+  .src li:last-child{border:0;padding-bottom:0}.src li:first-child{padding-top:0}
+  .si{flex:none;width:23px;height:23px;border-radius:6px;display:grid;place-items:center;
+    background:rgba(255,255,255,.04);border:1px solid var(--bds);font-size:11px}
+  .src .n{color:var(--fg);font-weight:590}.src .mt{color:var(--meta);font-size:11px;margin-top:2px}
+  .src .lk{color:var(--ac2);font-size:11px;font-weight:510}
+  .safe li{display:flex;gap:9px;padding:7px 0;font-size:12.5px;color:var(--fg2);align-items:flex-start;list-style:none}
+  .safe .i{flex:none;color:var(--ok);font-weight:700;width:14px;text-align:center}
+  .safe .i.w{color:var(--warn)}
+  .notice{margin-top:12px;padding:11px 13px;border-radius:var(--rs);
+    background:rgba(234,179,8,.06);border:1px solid rgba(234,179,8,.22);
+    font-size:11.5px;line-height:1.55;color:#d6c38a}.notice b{color:var(--warn)}
+  .sev{font-size:9.5px;font-weight:700;padding:1px 6px;border-radius:4px;font-family:var(--m)}
+  .sev.h{color:var(--dng);background:rgba(220,38,38,.12);border:1px solid rgba(220,38,38,.3)}
+  .sev.m{color:var(--warn);background:rgba(234,179,8,.1);border:1px solid rgba(234,179,8,.28)}
+  .sev.l{color:var(--mut);background:rgba(255,255,255,.05);border:1px solid var(--bds)}
+  .code{font-family:var(--m);font-size:11.5px;background:#0c0d0e;border:1px solid var(--bds);
+    border-radius:var(--rm);overflow:hidden;margin-top:10px}
+  .code .cl{display:flex;line-height:1.85}
+  .code .g{color:var(--meta);width:32px;text-align:right;padding-right:11px;flex:none;user-select:none}
+  .code .x{color:var(--fg2);white-space:pre;padding-right:12px}
+  .code .vuln{background:rgba(220,38,38,.09);border-left:2px solid var(--dng)}
+  .code .fix{background:rgba(39,166,68,.09);border-left:2px solid var(--ok)}
+  .code .cm{color:var(--meta)}.code .kw{color:var(--ac2)}
+  .codeh{font-size:10px;font-weight:590;letter-spacing:.06em;text-transform:uppercase;
+    color:var(--meta);margin:14px 0 0;display:flex;gap:7px;align-items:center}
+  .codeh.bad{color:var(--dng)}.codeh.good{color:var(--ok)}
+  .timeline{display:flex;flex-direction:column}
+  .tl{display:flex;gap:13px;padding-bottom:15px;position:relative}
+  .tl::before{content:"";position:absolute;left:9px;top:20px;bottom:-3px;width:1px;background:var(--bds)}
+  .tl:last-child::before{display:none}
+  .tld{flex:none;width:19px;height:19px;border-radius:50%;border:1px solid var(--bds);
+    background:#0c0d0e;display:grid;place-items:center;font-size:9px;color:var(--meta);z-index:1}
+  .tl.done .tld{background:rgba(39,166,68,.15);border-color:rgba(39,166,68,.4);color:var(--ok)}
+  .tl.cur .tld{background:rgba(94,106,210,.2);border-color:rgba(113,112,255,.5);color:var(--ac2)}
+  .tl .tt{font-size:12.5px;font-weight:590;color:var(--fg)}
+  .tl .td{font-size:11px;color:var(--meta);margin-top:3px;line-height:1.5}
+  .htable{width:100%;border-collapse:collapse;font-size:12px;margin-top:4px}
+  .htable th{text-align:left;font-size:9.5px;letter-spacing:.05em;text-transform:uppercase;
+    color:var(--meta);font-weight:590;padding:8px 9px;border-bottom:1px solid var(--bds)}
+  .htable td{padding:9px;border-bottom:1px solid var(--bds);color:var(--fg2)}
+  .htable td b{color:var(--fg)}
+  .match{font-family:var(--m);font-size:10px;color:var(--em);font-weight:600}
+  .match.mid{color:var(--warn)}
+  .tog{display:flex;align-items:center;justify-content:space-between;padding:12px 0;
+    border-bottom:1px solid var(--bds);font-size:13px}.tog:last-child{border:0}
+  .tog .n{color:var(--fg);font-weight:510}.tog .mt{color:var(--meta);font-size:11.5px;margin-top:2px}
+  .sw{width:34px;height:19px;border-radius:var(--pill);background:rgba(94,106,210,.4);
+    position:relative;flex:none;cursor:pointer}
+  .sw::after{content:"";position:absolute;width:15px;height:15px;border-radius:50%;
+    background:#fff;top:2px;right:2px;transition:.18s}
+  .sw.off{background:rgba(255,255,255,.08)}.sw.off::after{right:auto;left:2px}
+  .seg{display:flex;gap:2px;background:#0c0d0e;border:1px solid var(--bds);
+    border-radius:var(--rs);padding:3px;font-size:12px}
+  .seg span{padding:5px 11px;border-radius:4px;color:var(--mut);cursor:pointer}
+  .seg span.on{background:rgba(94,106,210,.2);color:var(--fg);font-weight:590}
+
+  /* ── CodeRabbit-style review + GitHub Files-changed diff ── */
+  details.cr{border:1px solid var(--bds);border-radius:var(--rm);background:#0c0d0e;overflow:hidden}
+  details.cr+details.cr{margin-top:8px}
+  details.cr>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:9px;
+    padding:11px 13px;font-size:12.5px;font-weight:590;color:var(--fg)}
+  details.cr>summary::-webkit-details-marker{display:none}
+  details.cr>summary::before{content:"▸";color:var(--meta);font-size:11px;flex:none;transition:transform .2s}
+  details.cr[open]>summary::before{transform:rotate(90deg)}
+  details.cr .crin{padding:2px 13px 13px 30px}
+  details.cr .crin details.cr{background:rgba(255,255,255,.02)}
+  .crh{display:flex;align-items:center;gap:7px;font-size:13px;font-weight:590;color:var(--fg);
+    padding:11px 13px;border:1px solid rgba(234,179,8,.25);background:rgba(234,179,8,.06);
+    border-radius:var(--rm);margin-bottom:12px}
+  .crh b{color:var(--warn);font-size:15px}
+  .crtag{font-size:9px;font-weight:700;font-family:var(--m);padding:2px 6px;border-radius:4px;letter-spacing:.03em}
+  .crtag.act{color:var(--warn);background:rgba(234,179,8,.12);border:1px solid rgba(234,179,8,.3)}
+  .crtag.nit{color:var(--mut);background:rgba(255,255,255,.05);border:1px solid var(--bds)}
+  .crtag.ln{color:var(--ac2);background:rgba(94,106,210,.12);border:1px solid rgba(113,112,255,.3)}
+  .crtxt{font-size:12.5px;line-height:1.65;color:var(--fg2);margin:0 0 10px}
+  .crtxt b{color:var(--fg)}
+  .aiprompt{font-family:var(--m);font-size:10.5px;line-height:1.6;color:var(--mut);
+    background:#0a0b0c;border:1px solid var(--bds);border-radius:var(--rs);padding:11px 12px;white-space:pre-wrap}
+  .diffwrap{border:1px solid var(--bds);border-radius:var(--rm);overflow:hidden;background:#0c0d0e;margin-top:4px}
+  .diffhead{display:flex;align-items:center;gap:9px;padding:9px 13px;border-bottom:1px solid var(--bds);
+    font-family:var(--m);font-size:12px;color:var(--fg);font-weight:590}
+  .diffhead .st{margin-left:auto;font-family:var(--m);font-size:11px}
+  .diffhead .st .p{color:var(--ok)}.diffhead .st .m{color:var(--dng)}
+  .hunk{font-family:var(--m);font-size:10.5px;color:var(--ac2);background:rgba(94,106,210,.06);
+    padding:5px 13px;border-bottom:1px solid var(--bds)}
+  .dl{display:flex;font-family:var(--m);font-size:11.5px;line-height:1.95}
+  .dl .go,.dl .gn{width:30px;flex:none;text-align:right;padding-right:7px;color:var(--meta);user-select:none}
+  .dl .sg{width:17px;flex:none;text-align:center;color:var(--meta)}
+  .dl .cd{white-space:pre;color:var(--fg2);padding-right:12px}
+  .dl .cd .kw{color:var(--ac2)}.dl .cd .cm{color:var(--meta)}
+  .dl.del{background:rgba(220,38,38,.1)}.dl.del .sg{color:#e88}.dl.del .cd{color:#f0b6b6}
+  .dl.add{background:rgba(39,166,68,.1)}.dl.add .sg{color:#6c6}.dl.add .cd{color:#a8e0ba}
+  .rvc{border-top:1px solid var(--bds);background:rgba(255,255,255,.015);padding:13px}
+  .rvc .rh{display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--meta);margin-bottom:8px}
+  .rvc .ra{width:22px;height:22px;border-radius:6px;flex:none;
+    background:linear-gradient(150deg,var(--ac2),var(--ac));color:#fff;display:grid;place-items:center;
+    font-size:10px;font-weight:700}
+  .rvc .rn{color:var(--fg);font-weight:590}
+  .rvc .rb{font-size:12.5px;line-height:1.65;color:var(--fg2)}.rvc .rb b{color:var(--fg)}
+  .suggest{margin-top:10px;border:1px solid rgba(39,166,68,.28);border-radius:var(--rs);overflow:hidden}
+  .suggest .sh{font-size:10px;font-weight:590;letter-spacing:.04em;color:var(--ok);
+    padding:6px 11px;background:rgba(39,166,68,.08);border-bottom:1px solid rgba(39,166,68,.2)}
+  .suggest .sl{display:flex;font-family:var(--m);font-size:11px;line-height:1.9;background:rgba(39,166,68,.07)}
+  .suggest .sl .sg{width:17px;flex:none;text-align:center;color:#6c6}
+  .suggest .sl .cd{white-space:pre;padding-right:10px;color:#a8e0ba}
+  .suggest .sl .cd .kw{color:var(--ac2)}
+  .aiall{border-color:rgba(113,112,255,.34);background:rgba(94,106,210,.06)}
+  .aiall>summary{color:var(--ac2)}
+  .copyp{margin-left:auto;font-family:var(--f);font-size:10.5px;font-weight:590;color:var(--fg2);
+    background:rgba(255,255,255,.05);border:1px solid var(--bd);border-radius:var(--rs);
+    padding:4px 9px;cursor:pointer;transition:.15s}
+  .copyp:hover{background:rgba(94,106,210,.2);color:var(--fg);border-color:rgba(113,112,255,.4)}
+  .copyp.done{color:var(--ok);border-color:rgba(39,166,68,.4);background:rgba(39,166,68,.1)}
+
+  /* ── Dashboard 2x2 ── */
+  .dashgrid{display:flex;flex-direction:column;gap:14px;height:100%}
+  .drow{display:grid;gap:14px;flex:1;min-height:290px}
+  .drow.top{grid-template-columns:1.6fr 1fr}
+  .drow.bot{grid-template-columns:1fr 1fr}
+  @media(max-width:980px){.dashgrid{height:auto}.drow{grid-template-columns:1fr}}
+  .paper{background:#faf8f3;color:#1c1c1c;border:1px solid var(--bds);border-radius:6px;
+    padding:24px 26px;font-family:Georgia,"Times New Roman",serif;line-height:1.5}
+  .paper h4{font-size:17px;text-align:center;margin:0 0 4px;font-weight:700;color:#111}
+  .paper .pa{font-size:11px;text-align:center;color:#555;margin-bottom:15px}
+  .paper .pab{font-size:10.5px;color:#333;background:#efece4;border:1px solid #ddd6c7;
+    padding:9px 12px;border-radius:3px;margin:0 0 14px;line-height:1.55}
+  .paper .ph{font-size:12.5px;font-weight:700;margin:13px 0 5px;color:#111}
+  .paper p{font-size:11.5px;color:#222;margin:0 0 8px;text-align:justify}
+  .paper .pr{font-size:9.5px;color:#444;border-top:1px solid #ddd6c7;margin-top:13px;padding-top:8px;font-family:var(--m)}
+  .pvbar{display:flex;align-items:center;gap:10px;padding:11px 16px;border-bottom:1px solid var(--bds)}
+  .pvt{font-size:12px;font-weight:590;color:var(--fg)}
+  .pvdl{margin-left:auto;position:relative}
+  .dlbtn{font-family:var(--f);font-size:12px;font-weight:590;color:#fff;background:var(--ac);
+    border:0;border-radius:var(--rs);padding:7px 13px;cursor:pointer;box-shadow:inset 0 1px 0 rgba(255,255,255,.2)}
+  .dlbtn:hover{background:var(--ach)}
+  .dlmenu{position:absolute;right:0;top:calc(100% + 6px);min-width:150px;background:var(--surf);
+    border:1px solid var(--bd);border-radius:var(--rm);padding:5px;z-index:8;display:none;
+    box-shadow:0 12px 30px -16px rgba(0,0,0,.9)}
+  .dlmenu.on{display:block}
+  .dlmenu a{display:block;font-size:12px;color:var(--fg2);padding:8px 11px;border-radius:var(--rs);cursor:pointer}
+  .dlmenu a:hover{background:rgba(94,106,210,.16);color:var(--fg)}
+  .pvnote{font-size:10.5px;color:var(--meta);text-align:center;margin-top:11px}
+  .q{background:rgba(255,255,255,.02);border:1px solid var(--bd);border-radius:var(--rl);
+    padding:16px 18px;display:flex;flex-direction:column;min-width:0;overflow:hidden}
+  .qh{display:flex;align-items:center;gap:8px;margin-bottom:13px}
+  .qh .qt{font-size:13px;font-weight:590;color:var(--fg);letter-spacing:-.01em}
+  .qh .qm{font-size:11px;color:var(--meta);margin-left:auto;font-weight:510}
+  .qh .qtag{font-size:10px;font-weight:510;color:var(--ac2);border:1px solid rgba(113,112,255,.3);
+    background:rgba(94,106,210,.1);padding:2px 7px;border-radius:var(--pill)}
+  .bignum{font-family:var(--m);font-size:23px;font-weight:600;color:var(--fg);letter-spacing:-.02em}
+  .chg{font-size:12px;font-weight:600;font-family:var(--m)}
+  .chg.up{color:var(--em)}.chg.dn{color:var(--dng)}
+  .chart{flex:1;min-height:120px;margin:10px 0 6px}
+  .chart svg{width:100%;height:100%;display:block}
+  .qrow{display:flex;align-items:center;gap:9px;padding:7px 0;border-top:1px solid var(--bds);font-size:12px}
+  .qrow .nm{color:var(--fg);font-weight:510;flex:1}
+  .qrow .vv{font-family:var(--m);color:var(--fg2)}
+  .qsrc{margin-top:auto;padding-top:10px;font-size:10px;color:var(--meta)}
+  .waddr{font-family:var(--m);font-size:11px;color:var(--fg2);background:rgba(255,255,255,.05);
+    border:1px solid var(--bds);padding:3px 8px;border-radius:var(--pill)}
+  .wtok{display:flex;align-items:center;gap:10px;padding:9px 0;border-top:1px solid var(--bds);font-size:12.5px}
+  .wtok:first-child{border-top:0}
+  .wic{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-size:11px;flex:none;
+    background:rgba(255,255,255,.05);border:1px solid var(--bds);color:var(--fg2)}
+  .wtok .wn{color:var(--fg);font-weight:590}.wtok .wsub{color:var(--meta);font-size:10.5px}
+  .wtok .wv{margin-left:auto;text-align:right}
+  .wtok .wv b{color:var(--fg);font-weight:600;display:block;font-family:var(--m)}
+  .gal{display:grid;grid-template-columns:1fr 1fr;gap:10px;overflow:auto;flex:1;align-content:start}
+  .hk{border:1px solid var(--bds);border-radius:var(--rm);overflow:hidden;cursor:pointer;transition:.15s}
+  .hk:hover{border-color:rgba(113,112,255,.4)}
+  .hkp{padding:14px 13px}
+  .hkp .hpk{font-size:8px;font-weight:700;letter-spacing:.16em;color:var(--ac2)}
+  .hkp .hpt{font-size:14px;font-weight:800;color:#fff;line-height:1.05;margin:6px 0 0;letter-spacing:-.01em}
+  .hkb{padding:9px 12px;display:flex;align-items:center;gap:7px;font-size:11px;border-top:1px solid var(--bds)}
+  .hkb .hd1{color:var(--fg);font-weight:590}
+  .hkb .hd2{color:var(--meta);margin-left:auto;font-family:var(--m);font-size:10px}
+  .nws{display:flex;flex-direction:column;overflow:auto;flex:1}
+  .nw{display:flex;gap:11px;padding:11px 0;border-top:1px solid var(--bds);cursor:pointer}
+  .nw:first-child{border-top:0;padding-top:2px}
+  .nw:hover .nh{color:var(--ac2)}
+  .nwt{width:44px;height:44px;border-radius:8px;flex:none;display:grid;place-items:center;font-size:17px;
+    border:1px solid var(--bds)}
+  .nh{font-size:12.5px;font-weight:590;color:var(--fg);line-height:1.4;transition:.15s}
+  .nm2{font-size:10.5px;color:var(--meta);margin-top:5px;font-weight:510}
+  .nm2 b{color:var(--fg2)}
+</style>
+</head>
+<body>
+
+<div class="ann"><b>통합 풀 시안 (Mockup)</b><span>BlueNode · Crypto-Agent — 전 화면 풀 피델리티 · 모든 Sub-Agent 다턴 대화 + 이해 캔버스 누적 · open-design <span class="m">linear-app</span></span></div>
+
+<div class="app">
+  <div class="rail">
+    <div class="brand"><span class="gl">C</span> Crypto-Agent</div>
+    <button class="newchat">＋ 새 대화</button>
+
+    <div class="agtog" id="agtog">
+      <button class="agth"><span class="agcr">▾</span> 마스터 에이전트<span class="agm">오케스트레이터</span></button>
+      <div class="agsub">
+        <div class="nav child" data-s="a"><span class="ic">📚</span>학습 코치<span class="tg">A</span></div>
+        <div class="nav child" data-s="b"><span class="ic">🛡️</span>코드 리뷰<span class="tg">B</span></div>
+        <div class="nav child" data-s="c"><span class="ic">🔍</span>트랜잭션 설명<span class="live"></span></div>
+        <div class="nav child" data-s="h"><span class="ic">🏆</span>해커톤<span class="tg">H</span></div>
+        <div class="nav child" data-s="d"><span class="ic">📊</span>리서치 빌더<span class="tg">D</span></div>
+      </div>
+    </div>
+
+    <div class="rl">대화</div>
+    <div class="convo">
+      <div class="cv-i on" data-s="c"><span class="ic">🔍</span><div><div class="ct">Uniswap 스왑 분석</div><div class="cs">트랜잭션 · 방금</div></div></div>
+      <div class="cv-i" data-s="a"><span class="ic">📚</span><div><div class="ct">재진입성 학습</div><div class="cs">학습 코치 · 어제</div></div></div>
+      <div class="cv-i" data-s="b"><span class="ic">🛡️</span><div><div class="ct">dApp PR #42 감사</div><div class="cs">코드 리뷰 · 2일 전</div></div></div>
+      <div class="cv-i" data-s="h"><span class="ic">🏆</span><div><div class="ct">KBW 포스터 분석</div><div class="cs">해커톤 · 3일 전</div></div></div>
+      <div class="cv-i" data-s="d"><span class="ic">📊</span><div><div class="ct">경쟁 지형 리서치</div><div class="cs">리서치 빌더 · 4일 전</div></div></div>
+      <div class="cv-i" data-s="c"><span class="ic">🔍</span><div><div class="ct">0x7b2e… 컨트랙트 배포</div><div class="cs">트랜잭션 · 5일 전</div></div></div>
+      <div class="cv-i" data-s="a"><span class="ic">📚</span><div><div class="ct">CEI 패턴 질문</div><div class="cs">학습 코치 · 지난주</div></div></div>
+      <div class="cv-i" data-s="d"><span class="ic">📊</span><div><div class="ct">AskSurf 벤치마크 정리</div><div class="cs">리서치 빌더 · 지난주</div></div></div>
+      <div class="cv-i" data-s="b"><span class="ic">🛡️</span><div><div class="ct">Vault.sol 재감사</div><div class="cs">코드 리뷰 · 지난주</div></div></div>
+      <div class="cv-i" data-s="h"><span class="ic">🏆</span><div><div class="ct">ETHGlobal Seoul 포스터</div><div class="cs">해커톤 · 2주 전</div></div></div>
+    </div>
+
+    <div class="railbot">
+      <div class="nav" data-s="dash"><span class="ic">🏠</span>대시보드</div>
+      <div class="nav" data-s="set"><span class="ic">⚙️</span>설정 / 시스템</div>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="hd">
+      <span class="ti" id="hT">대시보드</span>
+      <span class="mt" id="hM">· 학회 멤버 진입 화면</span>
+      <span class="chip"><span class="d"></span>한국어 · Etherscan 연결됨</span>
+    </div>
+    <div class="stage">
+
+      <!-- ════════ 대시보드 ════════ -->
+      <div class="scr on" data-s="dash"><div class="doc" style="height:100%">
+        <div class="dashgrid">
+          <div class="drow top">
+
+          <!-- 상단 좌 · DeFi 차트 -->
+          <div class="q">
+            <div class="qh"><span class="qt">📈 DeFi 마켓</span><span class="qtag">TVL</span><span class="qm">실시간</span></div>
+            <div style="display:flex;align-items:flex-end;gap:12px">
+              <div class="bignum">$98.4B</div><div class="chg up">▲ 2.3% · 24h</div></div>
+            <div class="chart">
+              <svg viewBox="0 0 320 90" preserveAspectRatio="none">
+                <defs><linearGradient id="g1" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0" stop-color="#7170ff" stop-opacity="0.32"/>
+                  <stop offset="1" stop-color="#7170ff" stop-opacity="0"/></linearGradient></defs>
+                <path d="M0,72 L26,64 L52,68 L78,52 L104,57 L130,42 L156,48 L182,32 L208,38 L234,23 L260,29 L286,16 L320,11 L320,90 L0,90 Z" fill="url(#g1)"/>
+                <path d="M0,72 L26,64 L52,68 L78,52 L104,57 L130,42 L156,48 L182,32 L208,38 L234,23 L260,29 L286,16 L320,11" fill="none" stroke="#7170ff" stroke-width="2"/>
+              </svg>
+            </div>
+            <div class="qrow"><span class="dotc" style="width:8px;height:8px;border-radius:50%;flex:none;background:#5e6ad2"></span><span class="nm">Lido</span><span class="vv">$28.1B</span><span class="chg up" style="width:52px;text-align:right">+1.1%</span></div>
+            <div class="qrow"><span class="dotc" style="width:8px;height:8px;border-radius:50%;flex:none;background:#10b981"></span><span class="nm">EigenLayer</span><span class="vv">$14.7B</span><span class="chg up" style="width:52px;text-align:right">+4.2%</span></div>
+            <div class="qrow"><span class="dotc" style="width:8px;height:8px;border-radius:50%;flex:none;background:#eab308"></span><span class="nm">Aave</span><span class="vv">$12.3B</span><span class="chg dn" style="width:52px;text-align:right">−0.6%</span></div>
+            <div class="qsrc">출처 DefiLlama · 2026-05-16 14:05 KST</div>
+          </div>
+
+          <!-- 상단 우 · 내 지갑 -->
+          <div class="q">
+            <div class="qh"><span class="qt">👛 내 지갑</span><span class="waddr">0x3a1f…c4b2</span><span class="qm">Ethereum</span></div>
+            <div style="display:flex;align-items:flex-end;gap:12px">
+              <div class="bignum">$12,480.55</div><div class="chg dn">▼ 1.2% · 24h</div></div>
+            <div style="margin-top:12px;flex:1;overflow:auto">
+              <div class="wtok"><span class="wic">Ξ</span><div><div class="wn">ETH</div><div class="wsub">2.41 ETH</div></div><span class="wv"><b>$7,690</b><span class="chg dn">−1.8%</span></span></div>
+              <div class="wtok"><span class="wic">$</span><div><div class="wn">USDC</div><div class="wsub">3,820 USDC</div></div><span class="wv"><b>$3,820</b><span class="chg" style="color:var(--meta)">0.0%</span></span></div>
+              <div class="wtok"><span class="wic">₿</span><div><div class="wn">WBTC</div><div class="wsub">0.012 WBTC</div></div><span class="wv"><b>$812</b><span class="chg up">+0.9%</span></span></div>
+              <div class="wtok"><span class="wic">◎</span><div><div class="wn">ARB</div><div class="wsub">410 ARB</div></div><span class="wv"><b>$158</b><span class="chg up">+3.1%</span></span></div>
+            </div>
+            <div class="qsrc">온체인 잔액 · 블록 21,845,309 기준</div>
+          </div>
+          </div>
+          <div class="drow bot">
+
+          <!-- 하단 좌 · 해커톤 갤러리 -->
+          <div class="q">
+            <div class="qh"><span class="qt">🏆 해커톤</span><span class="qm">갤러리 · 포스터</span></div>
+            <div class="gal">
+              <div class="hk" onclick="go('h')">
+                <div class="hkp" style="background:radial-gradient(circle at 30% 20%,rgba(94,106,210,.4),transparent 60%),linear-gradient(155deg,#12132c,#0a0b15)"><div class="hpk">KOREA BLOCKCHAIN WEEK</div><div class="hpt">BUIDL<br>HACKATHON</div></div>
+                <div class="hkb"><span class="hd1">KBW 2026</span><span class="hd2">09.18 · Seoul</span></div></div>
+              <div class="hk" onclick="go('h')">
+                <div class="hkp" style="background:radial-gradient(circle at 70% 20%,rgba(16,185,129,.38),transparent 60%),linear-gradient(155deg,#0c1f1a,#0a0b15)"><div class="hpk">ETHGLOBAL</div><div class="hpt">ETHGlobal<br>Seoul</div></div>
+                <div class="hkb"><span class="hd1">ETHGlobal</span><span class="hd2">07.11 · Seoul</span></div></div>
+              <div class="hk" onclick="go('h')">
+                <div class="hkp" style="background:radial-gradient(circle at 30% 30%,rgba(234,179,8,.3),transparent 60%),linear-gradient(155deg,#211c08,#0a0b15)"><div class="hpk">DORAHACKS</div><div class="hpt">Web3<br>Buildathon</div></div>
+                <div class="hkb"><span class="hd1">DoraHacks</span><span class="hd2">상시 · Online</span></div></div>
+              <div class="hk" onclick="go('h')">
+                <div class="hkp" style="background:radial-gradient(circle at 60% 70%,rgba(220,38,38,.3),transparent 60%),linear-gradient(155deg,#23110f,#0a0b15)"><div class="hpk">SOLANA</div><div class="hpt">Colosseum<br>Hackathon</div></div>
+                <div class="hkb"><span class="hd1">Colosseum</span><span class="hd2">12.01 · Online</span></div></div>
+            </div>
+          </div>
+
+          <!-- 하단 우 · 블록체인 뉴스 -->
+          <div class="q">
+            <div class="qh"><span class="qt">📰 블록체인 뉴스</span><span class="qm">갤러리</span></div>
+            <div class="nws">
+              <div class="nw"><div class="nwt" style="background:rgba(94,106,210,.14)">⛓️</div><div><div class="nh">이더리움 Pectra 후속 업그레이드 테스트넷 일정 공개</div><div class="nm2"><b>The Block</b> · 32분 전</div></div></div>
+              <div class="nw"><div class="nwt" style="background:rgba(16,185,129,.14)">📊</div><div><div class="nh">비트코인 현물 ETF 주간 순유입 8주 연속 플러스</div><div class="nm2"><b>CoinDesk</b> · 1시간 전</div></div></div>
+              <div class="nw"><div class="nwt" style="background:rgba(234,179,8,.14)">🏛️</div><div><div class="nh">한국 가상자산이용자보호법 2차 입법 논의 본격화</div><div class="nm2"><b>블록미디어</b> · 3시간 전</div></div></div>
+              <div class="nw"><div class="nwt" style="background:rgba(113,112,255,.14)">🦄</div><div><div class="nh">Uniswap v4 훅 생태계 TVL 신고점 경신</div><div class="nm2"><b>The Defiant</b> · 5시간 전</div></div></div>
+              <div class="nw"><div class="nwt" style="background:rgba(220,38,38,.12)">⚠️</div><div><div class="nh">신규 DeFi 프로토콜 재진입성 익스플로잇 사후 분석 공개</div><div class="nm2"><b>Rekt</b> · 어제</div></div></div>
+            </div>
+            <div class="qsrc">집계 출처 다중 · 뉴스/RSS API</div>
+          </div>
+          </div>
+
+        </div>
+      </div></div>
+
+      <!-- ════════ A 학습 코치 ════════ -->
+      <div class="scr split" data-s="a">
+        <div class="chatcol">
+          <div class="ch-top"><div class="kick" style="margin:0">Sub-Agent A · Phase 1 (필수) · 소크라테스 페르소나</div></div>
+          <div class="thread">
+            <div class="turn u"><div class="av u">나</div><div><div class="bub">재진입성(reentrancy) 공격이 왜 위험한지 잘 모르겠어</div></div></div>
+            <div class="spawn"><span>🧠 오케스트레이터 → <b>📚 학습 코치 Sub-Agent</b></span><span class="st">● 커리큘럼 RAG · Updraft 인덱스</span></div>
+            <div class="turn a"><div class="av a">A</div><div><div class="who">학습 코치 · 소크라테스 모드</div>
+              <div class="bub">바로 답을 주기보다 같이 짚어볼게요. 함수가 <b>외부로 송금</b>한 뒤
+                <b>잔액을 차감</b>한다고 해봅시다. 그 송금을 받는 쪽이 같은 함수를 다시 호출하면
+                — 잔액은 아직 안 줄었으니 어떻게 될까요?
+                <div class="seebtn" data-cv="a1"><span class="k">캔버스</span> 개념 보기 →</div></div></div></div>
+            <div class="turn u"><div class="av u">나</div><div><div class="bub">아… 잔액이 그대로니까 또 인출되고, 계속 반복되겠네</div></div></div>
+            <div class="turn a"><div class="av a">A</div><div><div class="who">학습 코치</div>
+              <div class="bub">정확합니다. 그게 2016년 <b>The DAO</b> 사건의 핵심이었고
+                이더리움이 하드포크된 이유예요. 이걸 <b>정식으로 어디서 배우는지</b> —
+                Cyfrin Updraft 강의 어느 파트에서 다루는지 짚어줄게요.
+                <div class="seebtn" data-cv="a1"><span class="k">캔버스</span> 커리큘럼 위치 보기 →</div></div></div></div>
+            <div class="turn u"><div class="av u">나</div><div><div class="bub">오 Updraft 어디 보면 돼?</div></div></div>
+            <div class="turn a"><div class="av a">A</div><div><div class="who">학습 코치</div>
+              <div class="bub">Reentrancy는 Updraft <b>“Smart Contract Security &amp; Auditing”</b> 코스의
+                특정 섹션·레슨에서 다뤄요. 공식 코스 레포를 인덱싱해둬서
+                <b>어느 자료에 어느 내용</b>인지 위치만 정확히 찍어줍니다 —
+                내용 자체보다 “어디서 배우면 되는지” 안내가 목적이에요. 오른쪽 캔버스 ‘② 커리큘럼 위치’ 섹션을 보세요.</div></div></div>
+          </div>
+          <div class="composer"><div class="cbox"><input placeholder="이어서 질문… (예: 이 다음 레슨은 뭐야?)" /><button class="snd">보내기</button></div>
+            <div class="hints"><span class="hint">다음 레슨은?</span><span class="hint">선행으로 뭐 들어야 해?</span><span class="hint">이 섹션 전체 목차</span></div></div>
+        </div>
+        <div class="cv" data-agent="a">
+          <div class="cvh" style="padding-bottom:14px;border-bottom:1px solid var(--bds)"><div class="top" style="margin-bottom:0"><span class="nm">학습 캔버스</span><span class="cvtag">📚 소크라테스</span><span class="prog">개념 + 커리큘럼 위치</span></div></div>
+          <div class="cvbody">
+            <div class="cvs on" data-cv="a1">
+              <div class="lbl" style="margin-bottom:12px">① 개념 — 재진입성</div>
+              <div class="card">
+                <div class="step open"><button><span class="nm">1</span><span class="t">개념: 재진입성이란</span><span class="cr">▸</span></button>
+                  <div class="sb"><div><p>컨트랙트가 <span class="m">외부 호출</span>을 한 뒤에 상태(잔액)를 변경하면,
+                    그 외부 호출의 콜백이 같은 함수를 다시 호출(재진입)해 상태가 갱신되기 전에
+                    중복 인출하는 취약점.</p>
+                    <div class="ask"><b>스스로 —</b> 왜 "외부 호출"이 위험할까요?
+                      (힌트: 받는 주소가 컨트랙트면 임의 코드가 실행됨)</div></div></div></div>
+                <div class="step"><button><span class="nm">2</span><span class="t">사례: The DAO (2016)</span><span class="cr">▸</span></button>
+                  <div class="sb"><div><p>약 360만 ETH가 재진입으로 유출. 이더리움이
+                    ETH/ETC로 하드포크된 직접적 계기.</p></div></div></div>
+                <div class="step"><button><span class="nm">3</span><span class="t">핵심 메커니즘</span><span class="cr">▸</span></button>
+                  <div class="sb"><div><p><span class="m">call{value:}</span> → 공격자 <span class="m">fallback</span> →
+                    같은 <span class="m">withdraw()</span> 재호출 → 잔액 차감 전이라 통과 → 반복.</p>
+                    <div class="ask"><b>스스로 —</b> 어느 한 줄의 "순서"만 바꿔도 막힙니다. 어디일까요?</div></div></div></div>
+              </div>
+
+              <div class="lbl" style="margin:20px 0 12px">② 커리큘럼 위치 — Cyfrin Updraft</div>
+              <div class="card"><div class="lbl">이 주제 → 강의 위치 매핑</div>
+                <div class="crtxt" style="margin:0 0 13px">주제 <span class="m" style="color:var(--fg)">Reentrancy</span> 가
+                  Updraft 어느 코스·섹션·레슨에서 다뤄지는지 <b>위치만</b> 안내합니다
+                  (강의 내용 자체는 Updraft에서). 공식 코스 레포를 인덱싱해 매핑.</div>
+                <div style="font-size:11.5px;font-weight:590;color:var(--ac2);margin:0 0 8px">📚 Smart Contract Security &amp; Auditing</div>
+                <div class="row"><span class="ci">▸</span><div style="flex:1"><div class="n">Section · Common Attacks</div>
+                  <div class="mt">Lesson “Reentrancy” — 정의 · 공격 흐름 · The DAO</div></div><span class="match">핵심</span></div>
+                <div class="row"><span class="ci">▸</span><div style="flex:1"><div class="n">Section · Common Attacks</div>
+                  <div class="mt">Lesson “Reentrancy Mitigations” — CEI · ReentrancyGuard</div></div><span class="match">방어</span></div>
+                <div style="font-size:11.5px;font-weight:590;color:var(--ac2);margin:14px 0 8px">📚 Foundry Fundamentals <span style="color:var(--meta);font-weight:400">(연계)</span></div>
+                <div class="row"><span class="ci">▸</span><div style="flex:1"><div class="n">Section · Smart Contract Security</div>
+                  <div class="mt">Lesson “Reentrancy attack — exploit &amp; test” — PoC 실습</div></div><span class="match mid">연계</span></div>
+              </div>
+              <div class="card kpi"><div class="lbl">매핑 근거 (환각 방지)</div>
+                <div class="kr"><span>인덱스 소스</span><span class="v" style="font-size:10.5px">Cyfrin/security-and-auditing-full-course-s23</span></div>
+                <div class="kr"><span>매핑 방식</span><span class="v">공식 코스 레포 목차·스크립트 인덱싱</span></div></div>
+              <div class="notice"><b>범위</b> — 어느 자료의 어느 파트에서 다루는지 <b>위치만</b> 안내.
+                환각 방지를 위해 공식 코스 레포 인덱스만 사용하며, 강의 내용 자체는 제공하지 않습니다.</div>
+            </div>
+          </div>
+          <div class="cvfoot"><span>개념 + Cyfrin Updraft 위치 매핑 · 한 페이지</span><span class="sp">·</span><span>open-design <span class="m">linear-app</span></span></div>
+        </div>
+      </div>
+
+      <!-- ════════ B 코드 리뷰 ════════ -->
+      <div class="scr split" data-s="b">
+        <div class="chatcol">
+          <div class="ch-top"><div class="kick" style="margin:0">Sub-Agent B · Phase 2 · Audit 정체성 · Slither + Aderyn</div></div>
+          <div class="thread">
+            <div class="turn u"><div class="av u">나</div><div><div class="bub">PR 올렸어 리뷰해줘 — <span class="tok">github.com/bluenode/dapp · PR #42</span></div></div></div>
+            <div class="spawn"><span>🧠 → <b>🛡️ 코드 리뷰 Sub-Agent</b></span><span class="st">● Slither + Aderyn</span></div>
+            <div class="turn a"><div class="av a">B</div><div><div class="who">코드 리뷰 · 이중 엔진</div>
+              <div class="bub">Slither·Aderyn 돌렸어요. <b>조치 가능한 코멘트 1건 · Nitpick 3건.</b>
+                CodeRabbit식으로 파일·라인별로 정리했고, 맨 위에 <b>모든 코멘트 한 번에
+                복붙용 종합 AI 프롬프트</b>, 항목마다 제안 패치·개별 AI 프롬프트를 붙였어요.
+                <div class="seebtn" data-cv="b1"><span class="k">캔버스</span> 취약점 요약 보기 →</div></div></div></div>
+            <div class="turn u"><div class="av u">나</div><div><div class="bub">High 자세히 보고 수정안도</div></div></div>
+            <div class="turn a"><div class="av a">B</div><div><div class="who">코드 리뷰</div>
+              <div class="bub">Actionable 항목을 펼치면 한 곳에 다 있어요 — 공격 시나리오 +
+                <b>♻️ 제안 패치</b>(적용형 diff) + 🤖 AI 프롬프트. 전부 한 번에 고치려면
+                상단 <b>종합 프롬프트</b>를 복사해 코딩 에이전트에 그대로 던지면 돼요.
+                <div class="seebtn" data-cv="b1"><span class="k">캔버스</span> 취약점 요약 펼쳐보기 →</div></div></div></div>
+            <div class="turn u"><div class="av u">나</div><div><div class="bub">이대로 PR에 코멘트 달아줘</div></div></div>
+            <div class="turn a"><div class="av a">B</div><div><div class="who">코드 리뷰</div>
+              <div class="bub">PR #42에 <b>CodeRabbit식 리뷰 코멘트</b>(Actionable·Nitpick·제안 패치)를
+                초안으로 작성했어요. <b>머지 전 사람 승인</b> 후에만 게시됩니다 (자동 게시 안 함).</div></div></div>
+          </div>
+          <div class="composer"><div class="cbox"><input placeholder="이어서… (예: Nitpick 일괄 적용 / CI 게이트 설정)" /><button class="snd">보내기</button></div>
+            <div class="hints"><span class="hint">Nitpick 일괄 적용</span><span class="hint">제안 패치 커밋</span><span class="hint">CI 게이트 설정</span></div></div>
+        </div>
+        <div class="cv" data-agent="b">
+          <div class="cvh" style="padding-bottom:14px;border-bottom:1px solid var(--bds)"><div class="top" style="margin-bottom:0"><span class="nm">감사 캔버스</span><span class="cvtag">🛡️ Slither·Aderyn</span><span class="prog">CodeRabbit 리뷰 · PR #42</span></div></div>
+          <div class="cvbody">
+
+            <!-- b1 · CodeRabbit 스타일 요약 -->
+            <div class="cvs on" data-cv="b1">
+              <div class="crh">🧹 조치 가능한 코멘트: <b>1</b> &nbsp;·&nbsp; Nitpick 3 &nbsp;·&nbsp; PR #42</div>
+
+              <details class="cr aiall" open>
+                <summary>🤖 모든 리뷰 코멘트용 종합 AI 프롬프트
+                  <button class="copyp" data-t="b-allprompt">📋 한 번에 복사</button></summary>
+                <div class="crin">
+                  <div class="aiprompt" id="b-allprompt">Verify each finding against the current code and only fix it if needed.
+
+Inline comments:
+In @contracts/Vault.sol:
+- Around lines 23-24: withdraw() performs an external call
+  (msg.sender.call{value: amt}) before decrementing bal[msg.sender], enabling
+  reentrancy (SWC-107). Reorder to Checks-Effects-Interactions: move the balance
+  decrement above the external call, add OpenZeppelin nonReentrant to withdraw(),
+  and require() the call success. Add a unit test with a reentrant receiver that
+  asserts the contract balance cannot be drained.
+
+Nitpick comments:
+In @contracts/Vault.sol:
+- Around line 1: pragma is floating (^0.8.0). Pin the compiler version (e.g.
+  pragma solidity 0.8.24;) so builds are reproducible.
+- Around line 51: token.transfer(...) return value is not checked. Some ERC-20
+  tokens return false instead of reverting; wrap the call in require() or use
+  OpenZeppelin SafeERC20.
+In @contracts/Token.sol:
+- Around line 88: setOwner() changes state without emitting an event. Declare and
+  emit an OwnerChanged(previousOwner, newOwner) event for off-chain indexing.</div>
+                </div>
+              </details>
+
+              <details class="cr" open>
+                <summary>🛡️ Actionable comments (1)</summary>
+                <div class="crin">
+                  <details class="cr" open>
+                    <summary>📄 contracts/Vault.sol (1)</summary>
+                    <div class="crin">
+                      <div style="display:flex;gap:7px;align-items:center;margin-bottom:9px">
+                        <span class="crtag ln">L23-24</span><span class="crtag act">ACTIONABLE · HIGH</span></div>
+                      <div class="crtxt"><b>외부 호출 후 상태 변경 — 재진입성(reentrancy).</b>
+                        <span class="m">withdraw()</span> 가 <span class="m">msg.sender.call</span> 로 송금한 뒤
+                        잔액을 차감합니다. 수신 컨트랙트가 <span class="m">receive()</span> 에서
+                        <span class="m">withdraw()</span> 를 재호출하면 잔액 차감 전이라 require를 계속
+                        통과해 잔고 0까지 반복 인출됩니다. (SWC-107)</div>
+                      <details class="cr">
+                        <summary>♻️ 제안 패치</summary>
+                        <div class="crin">
+                          <div class="diffwrap">
+                            <div class="dl del"><span class="go">23</span><span class="gn"></span><span class="sg">-</span><span class="cd">  (bool ok,) = msg.sender.call{value: amt}("");</span></div>
+                            <div class="dl del"><span class="go">24</span><span class="gn"></span><span class="sg">-</span><span class="cd">  bal[msg.sender] -= amt;</span></div>
+                            <div class="dl add"><span class="go"></span><span class="gn">23</span><span class="sg">+</span><span class="cd">  bal[msg.sender] -= amt;</span></div>
+                            <div class="dl add"><span class="go"></span><span class="gn">24</span><span class="sg">+</span><span class="cd">  (bool ok,) = msg.sender.call{value: amt}("");</span></div>
+                            <div class="dl add"><span class="go"></span><span class="gn">25</span><span class="sg">+</span><span class="cd">  require(ok);</span></div>
+                          </div>
+                        </div>
+                      </details>
+                      <details class="cr">
+                        <summary>🤖 AI 에이전트용 프롬프트</summary>
+                        <div class="crin">
+                          <div class="aiprompt">Verify the finding against current code and only fix if needed.
+
+In @contracts/Vault.sol around lines 23-24, withdraw() performs an external
+call (msg.sender.call{value: amt}) before decrementing bal[msg.sender],
+enabling reentrancy. Reorder to Checks-Effects-Interactions: move the balance
+decrement above the external call, add OpenZeppelin nonReentrant modifier to
+withdraw(), and require() the call success. Add a unit test with a reentrant
+receiver asserting the contract balance cannot be drained.</div>
+                        </div>
+                      </details>
+                    </div>
+                  </details>
+                </div>
+              </details>
+
+              <details class="cr">
+                <summary>🧹 Nitpick comments (3)</summary>
+                <div class="crin">
+                  <details class="cr" open>
+                    <summary>📄 contracts/Vault.sol (2)</summary>
+                    <div class="crin">
+                      <div style="display:flex;gap:7px;align-items:center;margin-bottom:8px">
+                        <span class="crtag ln">L1</span><span class="crtag nit">NITPICK</span></div>
+                      <div class="crtxt"><b>Floating pragma.</b> <span class="m">pragma solidity ^0.8.0;</span>
+                        는 컴파일러 버전을 고정하지 않습니다. 배포 재현성을 위해 핀 고정 권장.</div>
+                      <details class="cr"><summary>♻️ 제안 패치</summary><div class="crin">
+                        <div class="diffwrap">
+                          <div class="dl del"><span class="go">1</span><span class="gn"></span><span class="sg">-</span><span class="cd">pragma solidity ^0.8.0;</span></div>
+                          <div class="dl add"><span class="go"></span><span class="gn">1</span><span class="sg">+</span><span class="cd">pragma solidity 0.8.24;</span></div>
+                        </div></div></details>
+                      <details class="cr"><summary>🤖 AI 에이전트용 프롬프트</summary><div class="crin">
+                        <div class="aiprompt">In @contracts/Vault.sol around line 1, the pragma is floating (^0.8.0).
+Pin the compiler version (e.g. pragma solidity 0.8.24;) so the deployed
+bytecode is reproducible. Update the pragma only; do not change logic.</div>
+                      </div></details>
+                      <div style="display:flex;gap:7px;align-items:center;margin:13px 0 8px">
+                        <span class="crtag ln">L51</span><span class="crtag nit">NITPICK</span></div>
+                      <div class="crtxt"><b>반환값 미확인.</b> <span class="m">token.transfer(...)</span> 의
+                        bool 반환을 확인하지 않습니다. 일부 ERC-20은 revert 대신 false 반환 —
+                        <span class="m">require()</span> 또는 SafeERC20 사용 권장.</div>
+                      <details class="cr"><summary>🤖 AI 에이전트용 프롬프트</summary><div class="crin">
+                        <div class="aiprompt">In @contracts/Vault.sol around line 51, token.transfer(...) return value
+is ignored. Some ERC-20 tokens return false instead of reverting. Wrap the
+call with require(token.transfer(...), "transfer failed") or switch to
+OpenZeppelin SafeERC20 (safeTransfer). Add a test with a false-returning
+mock token asserting the tx reverts.</div>
+                      </div></details>
+                    </div>
+                  </details>
+                  <details class="cr">
+                    <summary>📄 contracts/Token.sol (1)</summary>
+                    <div class="crin">
+                      <div style="display:flex;gap:7px;align-items:center;margin-bottom:8px">
+                        <span class="crtag ln">L88</span><span class="crtag nit">NITPICK</span></div>
+                      <div class="crtxt"><b>이벤트 누락.</b> 상태 변경 함수 <span class="m">setOwner()</span> 에
+                        이벤트가 없어 오프체인 인덱싱이 어렵습니다.
+                        <span class="m">OwnerChanged</span> 이벤트 emit 권장.</div>
+                      <details class="cr"><summary>🤖 AI 에이전트용 프롬프트</summary><div class="crin">
+                        <div class="aiprompt">In @contracts/Token.sol around line 88, setOwner() changes owner state
+without emitting an event. Declare event OwnerChanged(address indexed
+previousOwner, address indexed newOwner) and emit it inside setOwner()
+after the state change. Add a test asserting the event is emitted with the
+correct args.</div>
+                      </div></details>
+                    </div>
+                  </details>
+                </div>
+              </details>
+
+              <div class="notice" style="margin-top:12px"><b>작성 방식 · 고지</b> — 취약점 판정은
+                Slither·Aderyn(결정론적)이 하고, 위 한국어 요약·제안 패치·AI 프롬프트는 그 결과를
+                CodeRabbit식으로 정리한 것입니다. 최종 감사 책임은 개발자에게 있으며, PR 게시는
+                사람 승인 후에만 실행됩니다.</div>
+            </div>
+
+          </div>
+          <div class="cvfoot"><span>CodeRabbit식 요약 · 제안 패치 인라인</span><span class="sp">·</span><span>open-design <span class="m">linear-app</span></span></div>
+        </div>
+      </div>
+
+      <!-- ════════ C 트랜잭션 설명 (풀 인라인) ════════ -->
+      <div class="scr split" data-s="c">
+        <div class="chatcol">
+          <div class="ch-top"><div class="kick" style="margin:0">Sub-Agent C · Phase 3 · KBW 데모 · Etherscan + LLM</div></div>
+          <div class="thread">
+            <div class="turn u"><div class="av u">나</div><div><div class="bub">이 트랜잭션 뭔지 한국어로 알려줘 — <span class="tok">0x9f2c…b4f2</span></div></div></div>
+            <div class="spawn"><span>🧠 → <b>🔍 트랜잭션 설명 Sub-Agent</b></span><span class="st">● Etherscan</span></div>
+            <div class="turn a"><div class="av a">C</div><div><div class="who">트랜잭션 설명</div>
+              <div class="bub">외부 지갑 <span class="tok">0x3a1f…c4b2</span> 가 <b>Uniswap V3</b>에서
+                <b>1.5 WETH → 4,817.32 USDC</b> 로 스왑한 <b>정상 거래</b>입니다. 위험 신호 없음.
+                <div class="seebtn" data-cv="c1"><span class="k">캔버스 1</span> 요약·사실 보기 →</div></div></div></div>
+            <div class="turn u"><div class="av u">나</div><div><div class="bub">돈이 어디서 어디로 흐른 거야?</div></div></div>
+            <div class="turn a"><div class="av a">C</div><div><div class="who">트랜잭션 설명</div>
+              <div class="bub">같은 지갑이 보내고 받았어요 — WETH를 라우터에 넣고 그 자리에서 USDC를 회수.
+                <div class="seebtn" data-cv="c2"><span class="k">캔버스 2</span> 자금 흐름 보기 →</div></div></div></div>
+            <div class="turn u"><div class="av u">나</div><div><div class="bub">근데 '스왑'이 뭔지 잘 몰라 ㅠ</div></div></div>
+            <div class="turn a"><div class="av a">C</div><div><div class="who">트랜잭션 설명 · 교육 모드</div>
+              <div class="bub">단정 대신 단계로 쪼갰어요 — 무엇을/컨트랙트/이동/비용/의미 5단계 + 스스로 점검 질문.
+                <div class="seebtn" data-cv="c3"><span class="k">캔버스 3</span> 개념·단계 보기 →</div></div></div></div>
+            <div class="turn u"><div class="av u">나</div><div><div class="bub">이거 사기 아니지? 믿어도 돼?</div></div></div>
+            <div class="turn a"><div class="av a">C</div><div><div class="who">트랜잭션 설명</div>
+              <div class="bub">제 말만 믿지 말고 <b>출처로 확인</b>하세요 — 검증된 컨트랙트, 스캠 0건.
+                <div class="seebtn" data-cv="c4"><span class="k">캔버스 4</span> 출처·안전 보기 →</div></div></div></div>
+          </div>
+          <div class="composer"><div class="cbox"><input placeholder="이어서… (예: 가스비 비싼 거야?)" /><button class="snd">보내기</button></div>
+            <div class="hints"><span class="hint">가스비 비싼 거야?</span><span class="hint">이 지갑 다른 거래</span><span class="hint">학회 노트로</span></div></div>
+        </div>
+        <div class="cv" data-agent="c">
+          <div class="cvh"><div class="top"><span class="nm">이해 캔버스</span><span class="cvtag">🔍 트랜잭션</span><span class="prog">이해 <b>1</b>/4</span></div>
+            <div class="cvtabs">
+              <div class="cvtab on" data-cv="c1"><span class="n">1</span>요약·사실</div>
+              <div class="cvtab" data-cv="c2"><span class="n">2</span>자금 흐름</div>
+              <div class="cvtab" data-cv="c3"><span class="n">3</span>개념</div>
+              <div class="cvtab" data-cv="c4"><span class="n">4</span>출처·안전</div>
+            </div></div>
+          <div class="cvbody">
+            <div class="cvs on" data-cv="c1">
+              <div class="card">
+                <span class="vb">정상 거래 · 위험 신호 없음 · 출처 4건</span>
+                <div class="sum">외부 지갑 <span class="tok">0x3a1f…c4b2</span> 가 <em>Uniswap V3</em> 에서
+                  <span class="tok">1.5 WETH</span> 를 <span class="tok">4,817.32 USDC</span> 로 교환</div>
+                <div class="subr">쉽게 — 이더리움(WETH) 1.5개를 달러 스테이블코인(USDC)으로 바꾼
+                  환전성 거래. 체결 <b>성공</b>, 수수료 ≈ <b>₩1,420</b>.</div>
+              </div>
+              <div class="card"><div class="lbl">Etherscan 원본 + 라벨</div>
+                <div class="facts">
+                  <div><dt>해시</dt><dd class="m" style="font-size:11px">0x9f2c…b4f2</dd></div>
+                  <div><dt>상태</dt><dd>Success</dd></div>
+                  <div><dt>블록</dt><dd class="m" style="font-size:11px">21,845,309</dd></div>
+                  <div><dt>시각 KST</dt><dd>2026-05-16 11:24</dd></div>
+                  <div><dt>From</dt><dd class="m" style="font-size:11px">0x3a1f…c4b2</dd></div>
+                  <div><dt>To</dt><dd>Uniswap V3 Router</dd></div>
+                  <div><dt>가스</dt><dd>0.00031 ETH</dd></div>
+                  <div><dt>Nonce</dt><dd class="m" style="font-size:11px">142</dd></div>
+                </div>
+              </div>
+            </div>
+            <div class="cvs" data-cv="c2">
+              <div class="card"><div class="flow">
+                <div class="fn"><div class="w">🧑‍💻 외부 지갑</div><div class="a">0x3a1f…c4b2</div><div class="r">거래 요청자 (서명자)</div></div>
+                <div class="fbar"><span>− 1.5 WETH</span><span class="ln"></span><span>입력 ▾</span></div>
+                <div class="fn hl"><div class="w">🦄 Uniswap V3 Router</div><div class="a">0xE592…1564</div><div class="r">검증된 DEX 컨트랙트 · 풀에서 스왑 실행</div></div>
+                <div class="fbar"><span>+ 4,817.32 USDC</span><span class="ln"></span><span>출력 ▾</span></div>
+                <div class="fn"><div class="w">🧑‍💻 외부 지갑 <span class="tag">동일 지갑</span></div><div class="a">0x3a1f…c4b2</div><div class="r">USDC 수령</div></div>
+              </div></div>
+              <div class="card subr" style="font-size:12.5px">체결 환율 ≈ <b class="m" style="color:var(--fg)">1 WETH ≈ 3,211.5 USDC</b>,
+                슬리피지 한도(0.5%) 안 체결. 제3자로 빠진 자금 없음.</div>
+            </div>
+            <div class="cvs" data-cv="c3">
+              <div class="card">
+                <div class="step open"><button><span class="nm">1</span><span class="t">무엇을 한 거래인가</span><span class="cr">▸</span></button>
+                  <div class="sb"><div><p>지갑이 라우터의 <span class="m">exactInputSingle</span> 함수를 직접 호출해 교환 요청. 위임 흔적 없음.</p></div></div></div>
+                <div class="step"><button><span class="nm">2</span><span class="t">'스왑'이 뭔가요</span><span class="cr">▸</span></button>
+                  <div class="sb"><div><p>DEX에서 토큰 A를 B로 즉시 교환. 상대가 사람이 아니라 <b>유동성 풀</b>.</p>
+                    <div class="ask"><b>스스로 —</b> 풀을 상대로 바꾸면 무엇이 가격을 정할까요?</div></div></div></div>
+                <div class="step"><button><span class="nm">3</span><span class="t">토큰 이동</span><span class="cr">▸</span></button>
+                  <div class="sb"><div><p>WETH 1.5 out, USDC 4,817.32 in — 한 트랜잭션 동시 처리.</p></div></div></div>
+                <div class="step"><button><span class="nm">4</span><span class="t">비용</span><span class="cr">▸</span></button>
+                  <div class="sb"><div><p>가스 <span class="m">0.00031 ETH (≈₩1,420)</span>, 교환액 대비 ~0.02%.</p>
+                    <div class="ask"><b>스스로 —</b> 가스 120 gwei였다면 수수료는 약 몇 배?</div></div></div></div>
+                <div class="step"><button><span class="nm">5</span><span class="t">의미</span><span class="cr">▸</span></button>
+                  <div class="sb"><div><p>변동 자산→달러 고정 자산 이동. 사실 설명이며 매매 권유·손익 단정 아님.</p></div></div></div>
+              </div>
+            </div>
+            <div class="cvs" data-cv="c4">
+              <div class="card"><div class="lbl">출처 · 출처 없는 단정 없음</div>
+                <ul class="src">
+                  <li><span class="si">🔗</span><div><div class="n">Etherscan — 트랜잭션 원본</div><div class="mt">해시·블록·가스·로그 raw</div><span class="lk">tx/0x9f2c…b4f2 ↗</span></div></li>
+                  <li><span class="si">🏷️</span><div><div class="n">라벨 DB</div><div class="mt">Uniswap V3 Router 매칭</div><span class="lk">v2026.05 ↗</span></div></li>
+                  <li><span class="si">📈</span><div><div class="n">가격 — 체결 시점</div><div class="mt">블록 풀 가격</div><span class="lk">Pool ↗</span></div></li>
+                  <li><span class="si">🛡️</span><div><div class="n">스캠 DB 대조</div><div class="mt">악성 0건</div><span class="lk">05-16 ↗</span></div></li>
+                </ul>
+              </div>
+              <div class="card"><div class="lbl">안전 점검</div>
+                <ul class="safe">
+                  <li><span class="i">✓</span><div>컨트랙트 Etherscan 검증됨</div></li>
+                  <li><span class="i">✓</span><div>스캠·피싱 일치 없음</div></li>
+                  <li><span class="i w">!</span><div>외부 지갑 라벨 없음 (정상 거래엔 무관)</div></li>
+                </ul>
+                <div class="notice"><b>고지</b> — 정보 제공·교육 목적, 매매 권유 아님 (가상자산이용자보호법 준수).</div>
+              </div>
+            </div>
+          </div>
+          <div class="cvfoot"><span>대화 따라 캔버스 누적 · 탭 클릭 전환</span><span class="sp">·</span><span>open-design <span class="m">linear-app</span></span></div>
+        </div>
+      </div>
+
+      <!-- ════════ H 해커톤 ════════ -->
+      <div class="scr split" data-s="h">
+        <div class="chatcol">
+          <div class="ch-top"><div class="kick" style="margin:0">Sub-Agent H · 대회 포스터 → 정보 추출 (비전 OCR)</div></div>
+          <div class="thread">
+            <div class="turn u"><div class="av u">나</div><div><div class="bub">이 해커톤 포스터 정보 좀 정리해줘
+              <div style="margin-top:8px;display:inline-flex;align-items:center;gap:7px;font-size:11px;color:var(--fg2);background:rgba(255,255,255,.05);border:1px solid var(--bd);border-radius:var(--rs);padding:5px 9px">🖼️ hackathon-kbw2026.jpg</div></div></div></div>
+            <div class="spawn"><span>🧠 → <b>🏆 해커톤 Sub-Agent</b></span><span class="st">● 비전 OCR</span></div>
+            <div class="turn a"><div class="av a">H</div><div><div class="who">해커톤 Sub-Agent</div>
+              <div class="bub">포스터에서 텍스트를 읽어 대회 정보를 정리했어요 — 대회명·일정·장소·트랙·
+                상금·등록 마감·후원사. 포스터에 안 적힌 항목은 <b>추정하지 않고</b>
+                ‘불명확’으로 표시했어요. 오른쪽 확인하세요.
+                <div class="seebtn" data-cv="h1"><span class="k">캔버스</span> 대회 정보 보기 →</div></div></div></div>
+            <div class="turn u"><div class="av u">나</div><div><div class="bub">등록 마감 언제야?</div></div></div>
+            <div class="turn a"><div class="av a">H</div><div><div class="who">해커톤 Sub-Agent</div>
+              <div class="bub">포스터 원문 기준 <b>2026-08-15</b> 입니다. 포스터에 적힌 그대로 인용했고,
+                안 보이는 값은 만들어내지 않아요.</div></div></div>
+          </div>
+          <div class="composer"><div class="cbox"><input placeholder="이어서… (예: 다른 포스터도 분석해줘)" /><button class="snd">보내기</button></div>
+            <div class="hints"><span class="hint">다른 포스터 분석</span><span class="hint">트랙 원문 그대로</span><span class="hint">공식 링크만 추출</span></div></div>
+        </div>
+        <div class="cv" data-agent="h">
+          <div class="cvh" style="padding-bottom:14px;border-bottom:1px solid var(--bds)"><div class="top" style="margin-bottom:0"><span class="nm">대회 정보 캔버스</span><span class="cvtag">🏆 포스터 비전 OCR</span><span class="prog">포스터 → 추출</span></div></div>
+          <div class="cvbody">
+            <div class="cvs on" data-cv="h1">
+              <div class="card" style="padding:0;overflow:hidden">
+                <div style="position:relative;padding:26px 22px;background:radial-gradient(circle at 28% 18%,rgba(94,106,210,.38),transparent 62%),linear-gradient(160deg,#12132c,#0a0b15)">
+                  <div style="font-size:10px;font-weight:700;letter-spacing:.32em;color:var(--ac2)">KOREA BLOCKCHAIN WEEK · SEOUL</div>
+                  <div style="font-size:30px;font-weight:800;color:#fff;letter-spacing:-.02em;line-height:1.04;margin:11px 0 7px">BUIDL<br>HACKATHON 2026</div>
+                  <div style="font-size:12px;color:var(--fg2);font-weight:510">2026.09.18 – 09.21 · COEX, Seoul</div>
+                  <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:14px">
+                    <span class="tag">Infra</span><span class="tag">DeFi</span><span class="tag">Social</span><span class="tag">AI×Web3</span></div>
+                  <div style="display:flex;gap:22px;margin-top:16px">
+                    <div><div style="color:var(--meta);font-size:9px;letter-spacing:.1em">PRIZE POOL</div><b style="color:#fff;font-size:15px">$250,000</b></div>
+                    <div><div style="color:var(--meta);font-size:9px;letter-spacing:.1em">REGISTER BY</div><b style="color:#fff;font-size:15px">Aug 15</b></div></div>
+                  <div style="margin-top:16px;font-size:9px;color:var(--meta);letter-spacing:.12em">SPONSORS · KAIA · WEMIX · LINE · DUNAMU</div>
+                </div>
+                <div style="padding:8px 14px;font-size:10.5px;color:var(--meta);display:flex;gap:7px;align-items:center;border-top:1px solid var(--bds)">📷 업로드된 포스터 · hackathon-kbw2026.jpg</div>
+              </div>
+
+              <div class="card"><div class="lbl">AI 비전 추출 결과 · 포스터 원문 기준</div>
+                <div class="facts">
+                  <div><dt>대회명</dt><dd>KBW 2026 BUIDL Hackathon</dd></div>
+                  <div><dt>주최</dt><dd>Korea Blockchain Week</dd></div>
+                  <div><dt>일정</dt><dd>2026.09.18 – 09.21</dd></div>
+                  <div><dt>장소</dt><dd>COEX, Seoul</dd></div>
+                  <div><dt>트랙</dt><dd>Infra · DeFi · Social · AI×Web3</dd></div>
+                  <div><dt>총 상금</dt><dd>$250,000</dd></div>
+                  <div><dt>등록 마감</dt><dd>2026-08-15</dd></div>
+                  <div><dt>후원사</dt><dd>KAIA · WEMIX · LINE · Dunamu</dd></div>
+                </div>
+                <div class="row" style="margin-top:11px"><span class="ci">🔗</span><div style="flex:1"><div class="n">공식 링크</div><div class="mt">포스터 QR/URL에서 추출</div></div><span class="lk">koreablockchainweek.com ↗</span></div>
+                <div class="row"><span class="ci">?</span><div style="flex:1"><div class="n">참가 인원 / 팀 규모</div><div class="mt">포스터에 미기재</div></div><span class="tag" style="color:var(--warn);border-color:rgba(234,179,8,.3)">불명확</span></div>
+              </div>
+              <div class="notice"><b>원문 인용만</b> — 포스터에 적힌 텍스트만 추출·정리합니다.
+                없는 정보는 추정하지 않고 <b>불명확</b>으로 표기 (환각 방지).</div>
+            </div>
+          </div>
+          <div class="cvfoot"><span>포스터 이미지 → 비전 추출 · 원문 인용</span><span class="sp">·</span><span>open-design <span class="m">linear-app</span></span></div>
+        </div>
+      </div>
+
+      <!-- ════════ D 리서치 빌더 ════════ -->
+      <div class="scr split" data-s="d">
+        <div class="chatcol">
+          <div class="ch-top"><div class="kick" style="margin:0">Sub-Agent D · 리서치 빌더 · 출처 수집 → 구조화 리포트</div></div>
+          <div class="thread">
+            <div class="turn u"><div class="av u">나</div><div><div class="bub">‘한국어 온체인 분석 AI 에이전트 경쟁 지형’ 리서치해줘</div></div></div>
+            <div class="spawn"><span>🧠 → <b>📊 리서치 빌더 Sub-Agent</b></span><span class="st">● 출처 수집</span></div>
+            <div class="turn a"><div class="av a">D</div><div><div class="who">리서치 빌더</div>
+              <div class="bub">질문을 범위로 좁히고 <b>출처 6건</b>을 수집했어요 — AskSurf·Sentient·
+                Elicit 패턴·Dune·논문·뉴스. 모든 주장에 <b>[출처 N]</b> 을 달아 리포트 초안을
+                구조화했어요. 단정 없이 수집 범위 내에서만 종합합니다.
+                <div class="seebtn" data-cv="d1"><span class="k">캔버스 1</span> 질문·범위 보기 →</div></div></div></div>
+            <div class="turn u"><div class="av u">나</div><div><div class="bub">출처 뭐 모았어?</div></div></div>
+            <div class="turn a"><div class="av a">D</div><div><div class="who">리서치 빌더</div>
+              <div class="bub">1차 레퍼런스 + 벤치마크 대상. 항목별 <b>유형·출처·날짜</b>를 정리했고
+                Notion <b>레퍼런스 라이브러리</b>로 승격 가능해요.
+                <div class="seebtn" data-cv="d2"><span class="k">캔버스 2</span> 수집 출처 보기 →</div></div></div></div>
+            <div class="turn u"><div class="av u">나</div><div><div class="bub">리포트 초안 보여줘</div></div></div>
+            <div class="turn a"><div class="av a">D</div><div><div class="who">리서치 빌더</div>
+              <div class="bub">배경 → 경쟁자 → 차별화 공백 → 시사점. 문장마다 <b>[출처 N]</b>,
+                불확실하면 ‘확인 필요’ 표기.
+                <div class="seebtn" data-cv="d3"><span class="k">캔버스 3</span> 리포트 초안 보기 →</div></div></div></div>
+            <div class="turn u"><div class="av u">나</div><div><div class="bub">경쟁 비교표도</div></div></div>
+            <div class="turn a"><div class="av a">D</div><div><div class="who">리서치 빌더</div>
+              <div class="bub">AskSurf vs Sentient vs 우리(BlueNode) 벤치마크 매트릭스. Notion
+                <b>벤치마크 매트릭스 DB</b>로 바로 승격됩니다.
+                <div class="seebtn" data-cv="d4"><span class="k">캔버스 4</span> 벤치마크 매트릭스 보기 →</div></div></div></div>
+            <div class="turn u"><div class="av u">나</div><div><div class="bub">이거 논문으로도 정리해줘</div></div></div>
+            <div class="turn a"><div class="av a">D</div><div><div class="who">리서치 빌더</div>
+              <div class="bub">수집 출처 기반으로 <b>LaTeX 논문</b>을 작성했어요 — <span class="m">.tex</span> 소스 +
+                렌더 미리보기 + <span class="m">.bib</span>. 본문 모든 주장은 <span class="m">\cite</span> 로만 연결,
+                미수집 인용은 생성 안 함. Overleaf로 바로 열거나 PDF로 내보내요.
+                <div class="seebtn" data-cv="d5"><span class="k">캔버스 5</span> LaTeX 논문 보기 →</div></div></div></div>
+          </div>
+          <div class="composer"><div class="cbox"><input placeholder="이어서… (예: 출처 1건 더 깊게 / 범위 좁혀줘)" /><button class="snd">보내기</button></div>
+            <div class="hints"><span class="hint">범위 더 좁혀</span><span class="hint">출처 추가 수집</span><span class="hint">Notion DB로 승격</span></div></div>
+        </div>
+        <div class="cv" data-agent="d">
+          <div class="cvh"><div class="top"><span class="nm">리서치 캔버스</span><span class="cvtag">📊 출처 기반</span><span class="prog">이해 <b>1</b>/5</span></div>
+            <div class="cvtabs">
+              <div class="cvtab on" data-cv="d1"><span class="n">1</span>질문·범위</div>
+              <div class="cvtab" data-cv="d2"><span class="n">2</span>수집 출처</div>
+              <div class="cvtab" data-cv="d3"><span class="n">3</span>리포트 초안</div>
+              <div class="cvtab" data-cv="d4"><span class="n">4</span>벤치마크</div>
+              <div class="cvtab" data-cv="d5"><span class="n">5</span>LaTeX 논문</div>
+            </div></div>
+          <div class="cvbody">
+            <div class="cvs on" data-cv="d1">
+              <div class="card">
+                <div class="sum" style="font-size:15px">“한국어 온체인 분석 AI 에이전트의 경쟁 지형과
+                  BlueNode의 차별화 공백은?”</div>
+                <div class="subr" style="margin-top:10px">범위 — 2024~2026 출시 제품, 한국어/온체인 분석/실행
+                  축. 제외 — 단순 가격 봇, 폐쇄형 미공개.</div>
+              </div>
+              <div class="card kpi"><div class="lbl">방법</div>
+                <div class="kr"><span>패턴</span><span class="v">Elicit형 — 수집→정독→구조화</span></div>
+                <div class="kr"><span>승격 경로</span><span class="v">백로그 → 레퍼런스 → 벤치마크</span></div>
+                <div class="kr"><span>원칙</span><span class="v g">출처 없는 단정 없음</span></div></div>
+            </div>
+            <div class="cvs" data-cv="d2">
+              <div class="card"><ul class="src">
+                <li><span class="si">[1]</span><div><div class="n">AskSurf.ai — 1차 레퍼런스</div><div class="mt">제품 · 멀티에이전트+200소스+자연어 DEX</div><span class="lk">asksurf.ai ↗</span></div></li>
+                <li><span class="si">[2]</span><div><div class="n">Sentient — SERA-Crypto</div><div class="mt">벤치마크 · DMind #1 오픈소스</div><span class="lk">repo ↗</span></div></li>
+                <li><span class="si">[3]</span><div><div class="n">Elicit</div><div class="mt">패턴 · AI Research Assistant 표준</div><span class="lk">elicit.com ↗</span></div></li>
+                <li><span class="si">[4]</span><div><div class="n">Dune</div><div class="mt">온체인 분석 쿼리·시각화 사례</div><span class="lk">dune.com ↗</span></div></li>
+                <li><span class="si">[5]</span><div><div class="n">논문 — LLM Agent × Web3</div><div class="mt">Tool/MCP·멀티에이전트 (2025)</div><span class="lk">arXiv ↗</span></div></li>
+                <li><span class="si">[6]</span><div><div class="n">뉴스 — 한국 가상자산 도구 동향</div><div class="mt">기사 · 2026-05</div><span class="lk">출처 ↗</span></div></li>
+              </ul></div>
+            </div>
+            <div class="cvs" data-cv="d3">
+              <div class="card">
+                <div class="step open"><button><span class="nm">1</span><span class="t">배경</span><span class="cr">▸</span></button>
+                  <div class="sb"><div><p>온체인 분석 도구는 자연어 인터페이스로 수렴 중 <span class="m">[3][5]</span>.
+                    한국어 네이티브 제품은 희소 <span class="m">[6]</span>.</p></div></div></div>
+                <div class="step"><button><span class="nm">2</span><span class="t">경쟁자</span><span class="cr">▸</span></button>
+                  <div class="sb"><div><p>AskSurf = 멀티에이전트+200소스+자연어 실행 <span class="m">[1]</span>.
+                    Sentient SERA = 벤치 #1·오픈소스 <span class="m">[2]</span>. 둘 다 한국어 단독 차별화는 약함 <span class="m">[1][2]</span>.</p></div></div></div>
+                <div class="step"><button><span class="nm">3</span><span class="t">차별화 공백</span><span class="cr">▸</span></button>
+                  <div class="sb"><div><p>한국어 네이티브 + 학회/교육 + 출처 의무 + 자체 Subgraph 결합은
+                    미충족 영역 <span class="m">[1][4][6]</span>. (정량 점유율은 <b>확인 필요</b> — 공개 데이터 부족)</p></div></div></div>
+                <div class="step"><button><span class="nm">4</span><span class="t">시사점</span><span class="cr">▸</span></button>
+                  <div class="sb"><div><p>‘좁은 N’(한국어×학회×Audit)에서 신뢰 자산을 먼저 쌓는 전략이 합리적 <span class="m">[1][2][6]</span>.</p></div></div></div>
+              </div>
+              <div class="notice"><b>범위</b> — 수집된 6개 출처 범위 내 종합. 출처 없는 단정 금지,
+                공개 데이터 부족 항목은 ‘확인 필요’로 표기.</div>
+            </div>
+            <div class="cvs" data-cv="d4">
+              <div class="card"><table class="htable">
+                <tr><th>축</th><th>AskSurf [1]</th><th>Sentient [2]</th><th>BlueNode (우리)</th></tr>
+                <tr><td>1차 언어</td><td>영어</td><td>영어</td><td><b>한국어 네이티브</b></td></tr>
+                <tr><td>데이터</td><td>외부 큐레이션</td><td>벤치 중심</td><td>Subgraph+외부 하이브리드</td></tr>
+                <tr><td>강점</td><td>실행·소셜</td><td>정확도</td><td>학회·교육·출처 의무</td></tr>
+                <tr><td>공개</td><td>클로즈드</td><td>오픈소스</td><td>오픈 우선</td></tr>
+              </table></div>
+              <div class="notice"><b>승격</b> — 이 표는 Notion <b>벤치마크 매트릭스 DB</b>로 바로
+                등재(보고서 §11 레퍼런스 관리 체계와 연동).</div>
+            </div>
+            <div class="cvs" data-cv="d5">
+              <div class="card" style="padding:0;overflow:visible">
+                <div class="pvbar">
+                  <span class="pvt">📄 논문 미리보기 · PDF</span>
+                  <div class="pvdl">
+                    <button class="dlbtn" id="d5dl">⬇ 다운로드 ▾</button>
+                    <div class="dlmenu" id="d5menu">
+                      <a>⬇ paper.pdf</a><a>⬇ paper.tex</a><a>⬇ refs.bib</a><a>↗ Overleaf 열기</a>
+                    </div>
+                  </div>
+                </div>
+                <div style="padding:18px">
+                  <div class="paper">
+                    <h4>한국어 온체인 분석 AI 에이전트의 경쟁 지형과 차별화 공백</h4>
+                    <div class="pa">BlueNode 개발팀 · 2026-05-16</div>
+                    <div class="pab"><b>Abstract.</b> 온체인 분석 도구는 자연어 인터페이스로 수렴 중이며, 한국어 네이티브 제품은 희소하다. 본고는 AskSurf와 Sentient SERA를 비교해 BlueNode의 차별화 공백을 도출한다.</div>
+                    <div class="ph">1. 배경</div><p>자연어 인터페이스로의 수렴이 관찰된다 [3,5]. 한국어 네이티브 제품은 희소하다 [6].</p>
+                    <div class="ph">2. 경쟁자 분석</div><p>AskSurf는 멀티에이전트·자연어 실행을 제공한다 [1]. Sentient SERA는 벤치 #1·오픈소스다 [2].</p>
+                    <div class="ph">3. 차별화 공백</div><p>한국어×학회×Audit 결합은 미충족 영역이다 [1,4,6]. 정량 점유율은 확인이 필요하다.</p>
+                    <div class="ph">4. 결론</div><p>‘좁은 N’(한국어×학회×Audit)에서 신뢰 자산을 먼저 쌓는 전략이 합리적이다 [1,2,6].</p>
+                    <div class="pr">References — [1] AskSurf · [2] Sentient SERA · [3] Elicit · [4] Dune · [5] arXiv · [6] 뉴스 (§수집 출처)</div>
+                  </div>
+                  <div class="pvnote">수집 출처 기반 · 본문 모든 주장 \cite 연결 · 미수집 인용 생성 안 함 (환각 방지)</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="cvfoot"><span>출처 수집 → 구조화 → LaTeX 논문 · 출처 없는 단정 없음</span><span class="sp">·</span><span>open-design <span class="m">linear-app</span></span></div>
+        </div>
+      </div>
+
+      <!-- ════════ 설정 ════════ -->
+      <div class="scr" data-s="set"><div class="doc">
+        <div class="kick">운영 · 시스템</div>
+        <h1 style="font-size:24px">설정 / 시스템</h1>
+        <p class="lede">외부 의존성과 안전 가드 — 보고서 §12 의사결정 대기 항목과 직결됩니다.</p>
+        <div class="grid2" style="margin-top:22px">
+          <div class="card"><div class="lbl">LLM 제공자 <span style="color:var(--warn)">· 결정 대기</span></div>
+            <div class="seg" style="margin-bottom:14px"><span class="on">Claude</span><span>GPT</span><span>오픈소스</span></div>
+            <div class="tog"><div><div class="n">출처 인용 엔진</div><div class="mt">출처 없는 단정 차단</div></div><span class="sw"></span></div>
+            <div class="tog"><div><div class="n">소크라테스 페르소나</div><div class="mt">단정 대신 질문 유도</div></div><span class="sw"></span></div></div>
+          <div class="card"><div class="lbl">데이터 소스</div>
+            <div class="tog"><div><div class="n">Etherscan API</div><div class="mt">트랜잭션·라벨</div></div><span class="sw"></span></div>
+            <div class="tog"><div><div class="n">The Graph Subgraph</div><div class="mt">자체 온체인 레이어</div></div><span class="sw"></span></div>
+            <div class="tog"><div><div class="n">스캠 DB 대조</div><div class="mt">악성 주소 점검</div></div><span class="sw"></span></div></div>
+          <div class="card"><div class="lbl">안전 · 컴플라이언스</div>
+            <div class="tog"><div><div class="n">가상자산이용자보호법 가드</div><div class="mt">단정적 매매 권유 차단</div></div><span class="sw"></span></div>
+            <div class="tog"><div><div class="n">OWASP LLM Top 10</div><div class="mt">프롬프트 인젝션 격리</div></div><span class="sw"></span></div>
+            <div class="tog"><div><div class="n">커맨드 승인</div><div class="mt">민감 작업 휴먼 게이트</div></div><span class="sw"></span></div></div>
+          <div class="card"><div class="lbl">배포 · 공개 <span style="color:var(--warn)">· 결정 대기</span></div>
+            <div class="tog"><div><div class="n">레포 공개 범위</div><div class="mt">GitHub Crypto-Agent</div></div><span class="tag">public?</span></div>
+            <div class="tog"><div><div class="n">배포 도메인</div><div class="mt">도메인 필요 여부</div></div><span class="tag">미정</span></div>
+            <div class="tog"><div><div class="n">담당자 배치</div><div class="mt">PM·AI·BE·FE·온체인</div></div><span class="tag">미정</span></div></div>
+        </div>
+      </div></div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+  const META={
+    dash:["대시보드","· 학회 멤버 진입 화면"],
+    a:["학습 코치","· Sub-Agent A · Phase 1 (필수)"],
+    b:["코드 리뷰","· Sub-Agent B · Phase 2 · Audit"],
+    c:["트랜잭션 설명","· Sub-Agent C · Phase 3 · KBW 데모"],
+    h:["해커톤 코파일럿","· Sub-Agent H · Phase 2/3"],
+    d:["리서치 빌더","· Sub-Agent D · 출처 수집·구조화 리포트"],
+    set:["설정 / 시스템","· 외부 의존성 · 안전 가드"]};
+  function go(s){
+    document.querySelectorAll('.scr').forEach(x=>x.classList.toggle('on',x.dataset.s===s));
+    document.querySelectorAll('.nav[data-s]').forEach(n=>n.classList.toggle('on',n.dataset.s===s));
+    document.getElementById('hT').textContent=META[s][0];
+    document.getElementById('hM').textContent=META[s][1];
+    var sc=document.querySelector('.scr[data-s="'+s+'"]');
+    var d=sc&&sc.querySelector('.doc'); if(d)d.scrollTop=0;
+    var th=sc&&sc.querySelector('.thread'); if(th)th.scrollTop=th.scrollHeight;
+  }
+  document.querySelectorAll('.nav[data-s]').forEach(n=>n.addEventListener('click',()=>go(n.dataset.s)));
+  document.querySelectorAll('.cv-i[data-s]').forEach(c=>c.addEventListener('click',()=>{
+    document.querySelectorAll('.cv-i').forEach(x=>x.classList.remove('on'));
+    c.classList.add('on'); go(c.dataset.s);
+  }));
+  (function(){var a=document.getElementById('agtog');
+    if(a)a.querySelector('.agth').addEventListener('click',()=>a.classList.toggle('collapsed'));})();
+
+  // per-agent canvas switching (scoped)
+  function cvShow(cvEl,id){
+    var tabs=[...cvEl.querySelectorAll('.cvtab')];
+    cvEl.querySelectorAll('.cvs').forEach(x=>x.classList.toggle('on',x.dataset.cv===id));
+    tabs.forEach(t=>t.classList.toggle('on',t.dataset.cv===id));
+    var i=tabs.findIndex(t=>t.dataset.cv===id);
+    var p=cvEl.querySelector('.prog b'); if(p&&i>=0)p.textContent=i+1;
+    cvEl.querySelector('.cvbody').scrollTop=0;
+  }
+  document.querySelectorAll('.cvtab').forEach(t=>
+    t.addEventListener('click',()=>cvShow(t.closest('.cv'),t.dataset.cv)));
+  document.querySelectorAll('.seebtn[data-cv]').forEach(b=>
+    b.addEventListener('click',()=>{
+      var cv=b.closest('.scr').querySelector('.cv'); cvShow(cv,b.dataset.cv);
+      b.closest('.thread').querySelectorAll('.seebtn').forEach(x=>x.style.borderColor='');
+      b.style.borderColor='rgba(113,112,255,.6)';
+      if(b.dataset.go){var t=cv.querySelector('.csec[data-sec="'+b.dataset.go+'"]');
+        if(t)t.scrollIntoView({behavior:'smooth',block:'start'});}
+    }));
+
+  // accordions / toggles / segmented / chips
+  document.querySelectorAll('.step button').forEach(b=>
+    b.addEventListener('click',()=>b.parentElement.classList.toggle('open')));
+  document.querySelectorAll('.sw').forEach(s=>
+    s.addEventListener('click',()=>s.classList.toggle('off')));
+  document.querySelectorAll('.seg').forEach(g=>g.querySelectorAll('span').forEach(x=>
+    x.addEventListener('click',()=>{g.querySelectorAll('span').forEach(y=>y.classList.remove('on'));x.classList.add('on')})));
+  document.querySelectorAll('.composer .hint').forEach(h=>
+    h.addEventListener('click',()=>{var i=h.closest('.composer').querySelector('input');i.value=h.textContent;i.focus();}));
+  document.querySelectorAll('.copyp').forEach(b=>b.addEventListener('click',e=>{
+    e.preventDefault();e.stopPropagation();
+    var t=document.getElementById(b.dataset.t);if(!t)return;
+    navigator.clipboard.writeText(t.textContent.trim()).then(()=>{
+      var o=b.textContent;b.textContent='✓ 복사됨';b.classList.add('done');
+      setTimeout(()=>{b.textContent=o;b.classList.remove('done');},1500);
+    }).catch(()=>{});
+  }));
+  (function(){var b=document.getElementById('d5dl'),m=document.getElementById('d5menu');
+    if(!b||!m)return;
+    b.addEventListener('click',function(e){e.stopPropagation();m.classList.toggle('on');});
+    document.addEventListener('click',function(){m.classList.remove('on');});})();
+</script>
+</body>
+</html>
